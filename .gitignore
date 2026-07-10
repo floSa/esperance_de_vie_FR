@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/
+*.egg-info/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Divers
+.DS_Store
