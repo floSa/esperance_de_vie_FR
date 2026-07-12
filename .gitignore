@@ -10,3 +10,6 @@ __pycache__/
 
 # Divers
 .DS_Store
+
+# Config locale Claude Code
+.claude/
