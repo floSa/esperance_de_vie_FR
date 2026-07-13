@@ -1,13 +1,17 @@
-# 📊 Espérance de vie — France & Europe
+# Espérance de vie — France & Europe
 
-Application **Streamlit** multi-pages analysant l'espérance de vie en France
-(1900–2025) et en Europe, construite à partir des tables de mortalité
-**HMD** (Human Mortality Database, mortality.org), de l'**INSEE**
-(Vallin & Meslé) et d'**Eurostat** (table `demo_mlexpec`).
+**Application Streamlit multi-pages qui analyse l'espérance de vie en France (1900–2025) et la compare au reste de l'Europe, à partir des tables de mortalité HMD, INSEE et Eurostat.**
 
-Une partie des données est **embarquée** (approximations démographiques
-validées), une partie peut être **rafraîchie via API** (Eurostat sans
-authentification, HMD avec credentials).
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![uv](https://img.shields.io/badge/uv-package_manager-DE5FE9?logo=uv&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.59-FF4B4B?logo=streamlit&logoColor=white)
+![Plotly](https://img.shields.io/badge/Plotly-6.9-3F4F75?logo=plotly&logoColor=white)
+
+Construite à partir des tables de mortalité **HMD** (Human Mortality Database,
+mortality.org), de l'**INSEE** (Vallin & Meslé) et d'**Eurostat** (table
+`demo_mlexpec`). Une partie des données est **embarquée** (approximations
+démographiques validées), une partie peut être **rafraîchie via API** (Eurostat
+sans authentification, HMD avec credentials).
 
 > Méthodes de calcul, formules, hypothèses et limites de représentativité :
 > **[DOCUMENTATION.md](DOCUMENTATION.md)**.
@@ -50,10 +54,10 @@ uv run streamlit run app.py
 
 | Page | Contenu |
 |---|---|
-| 📈 **Vue générale** | Évolution de e₀ / e₆₀ / e₆₅ (1900–2025), annotations WWI/WWII/Covid, comparaison des 26 pays UE (barres triées, moyenne UE-27), tops 10 |
-| 📐 **Distribution & variance** | Bande Q1–Q3 des âges au décès, médiane vs e₀, évolution de l'IQR (67 ans → 13 ans) : la **compression de la mortalité** |
-| 👥 **Explorateur de cohorte** | Pour une année de naissance (1930–1990) et un sexe : courbe de survie interpolée, effectifs nés / vivants / décédés, espérance résiduelle 2025 |
-| 🔄 **Âge fixe × générations** | À âge constant (35–90 ans), % de la génération encore en vie selon l'année d'observation — comparaison entre cohortes |
+| **Vue générale** | Évolution de e₀ / e₆₀ / e₆₅ (1900–2025), annotations WWI/WWII/Covid, comparaison des 26 pays UE (barres triées, moyenne UE-27), tops 10 |
+| **Distribution & variance** | Bande Q1–Q3 des âges au décès, médiane vs e₀, évolution de l'IQR (67 ans → 13 ans) : la **compression de la mortalité** |
+| **Explorateur de cohorte** | Pour une année de naissance (1930–1990) et un sexe : courbe de survie interpolée, effectifs nés / vivants / décédés, espérance résiduelle 2025 |
+| **Âge fixe × générations** | À âge constant (35–90 ans), % de la génération encore en vie selon l'année d'observation — comparaison entre cohortes |
 
 > Les graphiques sont **générés à la volée** par Plotly (thème clair/sombre suivant
 > Streamlit) ; aucune image statique n'est stockée dans le dépôt. Chaque page

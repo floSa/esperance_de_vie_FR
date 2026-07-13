@@ -148,7 +148,7 @@ colonnes `e0_f`, `e0_m`, `e0_total`. Le code Eurostat `EL` (Grèce) est remappé
 | Couleurs | Palette fixe par entité (femmes `#ec4899`, hommes `#0284c7`, e₀ `#f97316`) | Lecture cohérente entre les quatre pages ; jamais recyclée |
 | Comparaison européenne | Eurostat 2024 embarqué, rafraîchissable | Instantané par défaut, actualisable à la demande |
 
-> ⚠️ L'app affiche elle-même l'avertissement clé (page cohorte) : *les tables du
+> **Attention** — L'app affiche elle-même l'avertissement clé (page cohorte) : *les tables du
 > moment sous-estiment historiquement la survie des générations* — l'espérance
 > réelle d'une cohorte sera vraisemblablement **supérieure** si les progrès
 > sanitaires se poursuivent.
