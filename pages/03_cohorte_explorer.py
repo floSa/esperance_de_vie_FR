@@ -13,11 +13,13 @@ from common import (
     fr_num,
     get_cohort_survival,
     interp_survival,
+    note_lecture,
     persist,
     render_sidebar,
     source_note,
 )
-from data.embedded import BIRTHS_BY_YEAR, RESIDUAL_LIFE_2025, SEX_RATIO
+from data import repository as repo
+from data.embedded import RESIDUAL_LIFE_2025, SEX_RATIO
 
 st.set_page_config(page_title="Explorateur de cohorte · Espérance de vie", page_icon="👥", layout="wide")
 render_sidebar()
@@ -45,7 +47,7 @@ age_actuel = CURRENT_YEAR - annee_naissance
 # 2. Métriques
 # ---------------------------------------------------------------------------
 
-naissances = BIRTHS_BY_YEAR[annee_naissance] * SEX_RATIO[sexe]
+naissances = repo.naissances()[annee_naissance] * SEX_RATIO[sexe]
 pct_vivants = get_cohort_survival(sexe, annee_naissance, age_actuel)
 vivants = naissances * pct_vivants / 100
 decedes = naissances - vivants
@@ -53,26 +55,24 @@ residuelle = interp_survival(
     sorted(RESIDUAL_LIFE_2025[sexe].items()), min(age_actuel, 95)
 )
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric(
+c1, c2, c3, c4, c5 = st.columns(5)
+c1.metric(f"Âge en {CURRENT_YEAR}", f"{age_actuel} ans")
+c2.metric(
     f"Nés en {annee_naissance} ({SEX_LABELS[sexe].lower()})",
     f"{fr_num(naissances, 0)}",
+    help="Naissances vivantes France métropolitaine (INSEE), "
+         "réparties selon la proportion de filles et de garçons à la naissance",
 )
-c2.metric(
-    "Encore en vie estimés",
-    f"{fr_num(vivants, 0)}",
-    delta=f"{fr_num(pct_vivants)} %",
-)
-c3.metric(
-    "Décédés estimés",
-    f"{fr_num(decedes, 0)}",
-    delta=f"-{fr_num(100 - pct_vivants)} %",
-    delta_color="inverse",
-)
-c4.metric(
-    f"Espérance résiduelle à {age_actuel} ans",
-    f"{fr_num(residuelle)} ans",
-    help="Table du moment 2025 (approx. INSEE/DREES)",
+c3.metric("Encore en vie estimés", f"{fr_num(vivants, 0)}",
+          delta=f"{fr_num(pct_vivants)} %")
+c4.metric("Décédés estimés", f"{fr_num(decedes, 0)}",
+          delta=f"-{fr_num(100 - pct_vivants)} %", delta_color="inverse")
+c5.metric(
+    "Décès moyen attendu vers",
+    f"{fr_num(age_actuel + residuelle, 0)} ans",
+    delta=f"+{fr_num(residuelle)} ans à vivre",
+    delta_color="off",
+    help="Pour les survivants uniquement, selon la table du moment 2025",
 )
 
 # ---------------------------------------------------------------------------
@@ -124,14 +124,34 @@ apply_layout(
     title=f"Cohorte {SEX_LABELS[sexe].lower()} née en {annee_naissance} — "
           f"{fr_num(pct_vivants)} % encore en vie à {age_actuel} ans",
 )
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width='stretch')
+
+note_lecture(
+    f"L'axe horizontal suit la génération née en <strong>{annee_naissance}</strong> "
+    f"tout au long de sa vie, de 0 an jusqu'à son âge actuel "
+    f"({age_actuel} ans). La zone colorée du haut est la part encore en vie, la "
+    "zone rouge du bas la part déjà décédée — les deux font toujours 100 %. "
+    "<br><br>La pente raide tout à gauche est la <strong>mortalité "
+    "infantile</strong> : une part notable des décès d'une génération survient "
+    "avant son premier anniversaire. La zone rouge reste ensuite presque plate "
+    "pendant des décennies, puis s'élargit à partir de 60 ans environ.",
+    "Survie par génération : estimation à ±5 % (tables de génération INSEE / "
+    "Vallin & Meslé) · effectifs de naissance : "
+    + repo.millesime("naissances_fr_insee"),
+)
 
 st.warning(
-    "⚠️ **Espérance résiduelle** : la valeur affichée provient de la **table du "
-    "moment 2025** (conditions de mortalité de 2025 figées). L'espérance réelle "
-    "de la cohorte sera vraisemblablement **supérieure** si les progrès "
-    "sanitaires se poursuivent — les tables du moment sous-estiment "
-    "historiquement la survie des générations."
+    f"**Pourquoi « décès vers {fr_num(age_actuel + residuelle, 0)} ans » dépasse "
+    "l'espérance de vie à la naissance** — cette valeur ne concerne que les "
+    f"**survivants** : les {fr_num(100 - pct_vivants)} % de la génération déjà "
+    "décédés n'y comptent pas. Avoir atteint "
+    f"{age_actuel} ans, c'est avoir échappé à la mortalité infantile, aux "
+    "accidents et aux maladies précoces. Plus on avance en âge, plus l'âge de "
+    "décès attendu recule.\n\n"
+    "Le calcul repose de plus sur la **table du moment 2025**, qui fige les "
+    "conditions sanitaires d'aujourd'hui. Si les progrès se poursuivent, la "
+    "survie réelle de cette génération sera **supérieure** : les tables du moment "
+    "sous-estiment historiquement la longévité des générations."
 )
 
 download_csv(curve, "cohorte_explorer")

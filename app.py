@@ -1,7 +1,7 @@
 import streamlit as st
 
 from common import fr_num, render_sidebar, source_note
-from data.embedded import PERIOD_DISTRIBUTION_FEMMES, PERIOD_DISTRIBUTION_HOMMES
+from data import repository as repo
 
 st.set_page_config(
     page_title="Espérance de vie · France & Europe",
@@ -12,20 +12,22 @@ st.set_page_config(
 
 render_sidebar()
 
+serie = repo.serie_par_sexe(0)
+annee = int(serie["year"].max())
+derniere = serie.iloc[-1]
+
 st.title("📊 Espérance de vie — France & Europe")
 st.markdown(
-    "Quatre vues d'analyse de l'espérance de vie en France (1900–2025) et en "
-    "Europe, construites à partir des tables de mortalité **HMD** (Human "
-    "Mortality Database — base internationale des tables de mortalité), de "
-    "l'**INSEE** et d'**Eurostat**."
+    "Quatre vues d'analyse de l'espérance de vie en France et en Europe, "
+    "construites à partir des séries longues de l'**INSEE**, des tables de "
+    "mortalité **Eurostat** et des séries historiques d'**Our World in Data**."
 )
 
-f_last = PERIOD_DISTRIBUTION_FEMMES[-1]
-h_last = PERIOD_DISTRIBUTION_HOMMES[-1]
 c1, c2, c3 = st.columns(3)
-c1.metric("e₀ femmes (2025)", f"{fr_num(f_last['e0'])} ans")
-c2.metric("e₀ hommes (2025)", f"{fr_num(h_last['e0'])} ans")
-c3.metric("Écart femmes − hommes", f"{fr_num(f_last['e0'] - h_last['e0'])} ans")
+c1.metric(f"e₀ femmes ({annee})", f"{fr_num(derniere['femmes'])} ans")
+c2.metric(f"e₀ hommes ({annee})", f"{fr_num(derniere['hommes'])} ans")
+c3.metric("Écart femmes − hommes",
+          f"{fr_num(derniere['femmes'] - derniere['hommes'])} ans")
 
 st.markdown("---")
 st.subheader("Les quatre vues")
@@ -56,11 +58,12 @@ with col_b:
 
 st.markdown("")
 st.info(
-    "Une partie des données est **embarquée** (approximations démographiques "
-    "validées), une partie peut être **rafraîchie via API** : Eurostat "
-    "(sans authentification) sur la page Vue générale, HMD (credentials "
-    "`HMD_USER` / `HMD_PASSWORD` ou upload de fichier) sur la page "
-    "Distribution & variance."
+    "Les données sont **régénérées depuis les API publiques** (INSEE Melodi, "
+    "Eurostat, Our World in Data) par `scripts/refresh_data.py`. La provenance "
+    "de chaque jeu — URL, paramètres, millésime, date d'extraction — est "
+    "consignée dans `data/sources/manifest.json`.\n\n"
+    "Seule la survie **par génération** reste une estimation : aucune source "
+    "ouverte ne publie de tables de mortalité par cohorte pour la France."
 )
 
 source_note()

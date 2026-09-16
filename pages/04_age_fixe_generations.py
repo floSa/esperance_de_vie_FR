@@ -12,6 +12,7 @@ from common import (
     download_csv,
     fr_num,
     get_cohort_survival,
+    note_lecture,
     persist,
     render_sidebar,
     source_note,
@@ -133,12 +134,20 @@ apply_layout(
     title=f"{SEX_LABELS[sexe]} — part de la génération encore en vie à {age} ans, "
           f"selon l'année d'observation",
 )
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width='stretch')
 
-st.caption(
-    "Lecture : chaque point compare des **générations différentes** au même âge. "
-    "La hausse traduit la baisse de la mortalité prématurée (infantile, "
-    "tuberculose, guerres, accidents) au fil des cohortes."
+note_lecture(
+    f"Contrairement au graphique précédent, l'âge est ici <strong>fixé à "
+    f"{age} ans</strong> : chaque point correspond à une "
+    "<strong>génération différente</strong>, observée au même âge mais à une "
+    "année calendaire différente. Survoler un point donne l'année de naissance "
+    "correspondante. <br><br>La courbe monte parce que les générations récentes "
+    f"arrivent plus nombreuses à {age} ans : "
+    f"<strong>{fr_num(pct_debut)} %</strong> pour celle née en {y_min - age}, "
+    f"<strong>{fr_num(pct_fin)} %</strong> pour celle née en {y_max - age}. "
+    "L'axe vertical ne part pas de zéro, pour rendre l'écart lisible.",
+    "Survie par génération : estimation à ±5 % (tables de génération INSEE / "
+    "Vallin & Meslé)",
 )
 
 download_csv(df, "age_fixe_generations")

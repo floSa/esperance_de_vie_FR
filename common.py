@@ -1,5 +1,7 @@
 """Constantes, palette et utilitaires partagés par toutes les pages."""
 
+from datetime import date
+
 import streamlit as st
 
 from data.embedded import COHORT_SURVIVAL
@@ -16,12 +18,12 @@ SEX_COLORS = {"femmes": COLOR_FEMMES, "hommes": COLOR_HOMMES}
 SEX_ZONES = {"femmes": COLOR_FEMMES_ZONE, "hommes": COLOR_HOMMES_ZONE}
 SEX_LABELS = {"femmes": "Femmes", "hommes": "Hommes"}
 
-CURRENT_YEAR = 2026
+CURRENT_YEAR = date.today().year
 
 SOURCE_NOTE = (
-    "*Estimations approx. · Sources : HMD (mortality.org), INSEE tables de "
-    "mortalité (Vallin & Meslé), Eurostat demo_mlexpec, DREES 2024 · "
-    "Survie cohorte estimée à ±5 %*"
+    "*Sources : INSEE (API Melodi), Eurostat (demo_mlexpec, demo_mlifetable), "
+    "Our World in Data · Provenance détaillée dans `data/sources/manifest.json` · "
+    "Survie par génération estimée à ±5 %*"
 )
 
 
@@ -55,18 +57,35 @@ def apply_layout(fig, **kwargs):
 
 def render_sidebar():
     st.sidebar.title("📊 Espérance de vie")
-    st.sidebar.caption("France & Europe · HMD / INSEE / Eurostat")
+    st.sidebar.caption("France & Europe · INSEE / Eurostat / OWID")
     st.sidebar.markdown("---")
     st.sidebar.info(
-        "**Sources** : HMD (mortality.org), INSEE tables de mortalité "
-        "(Vallin & Meslé), Eurostat demo_mlexpec · "
-        "Données approximées sauf import HMD direct."
+        "**Sources** : INSEE (API Melodi), Eurostat (demo_mlexpec, "
+        "demo_mlifetable), Our World in Data.\n\n"
+        "Rafraîchir : `uv run python -m scripts.refresh_data`"
     )
 
 
 def source_note():
     st.markdown("---")
     st.markdown(SOURCE_NOTE)
+
+
+def note_lecture(lecture: str, source: str | None = None):
+    """Note de lecture affichée sous un graphique.
+
+    `lecture` explique comment déchiffrer le graphique — ce que portent les
+    axes, ce que signifie une courbe qui monte, le piège éventuel. `source`
+    indique d'où viennent les chiffres tracés.
+    """
+    st.markdown(
+        f"<div style='border-left:3px solid rgba(128,128,128,.35);"
+        f"padding:.1rem 0 .1rem .8rem;margin:.2rem 0 .6rem 0;'>"
+        f"<strong>Comment lire ce graphique</strong><br>{lecture}</div>",
+        unsafe_allow_html=True,
+    )
+    if source:
+        st.caption(f"Source : {source}")
 
 
 def download_csv(df, page_name: str):
@@ -101,22 +120,21 @@ def fr_num(x: float, dec: int = 1) -> str:
 # Survie par cohorte (interpolation des ancres embarquées)
 # ---------------------------------------------------------------------------
 
-def interp_survival(cohort_data: list[tuple], age: float) -> float:
+def interp_survival(cohort_data: list[tuple], age: float) -> float | None:
     """Interpolation linéaire entre ancres [(age, pct), ...].
 
-    Au-delà de la dernière ancre, prolonge la pente du dernier segment
-    (résultat borné à [0, 100]).
+    Retourne `None` au-delà de la dernière ancre. Prolonger la pente du dernier
+    segment donnait des résultats aberrants : pour les générations récentes,
+    cette dernière ancre est leur âge atteint aujourd'hui, et le segment final
+    ne couvre parfois qu'une seule année — une pente bien trop raide pour être
+    extrapolée sur plusieurs décennies.
     """
     ages = [a for a, _ in cohort_data]
     pcts = [p for _, p in cohort_data]
     if age <= ages[0]:
         return float(pcts[0])
     if age > ages[-1]:
-        if len(ages) >= 2:
-            slope = (pcts[-1] - pcts[-2]) / (ages[-1] - ages[-2])
-        else:
-            slope = 0.0
-        return max(0.0, min(100.0, pcts[-1] + slope * (age - ages[-1])))
+        return None
     for i in range(1, len(ages)):
         if age <= ages[i]:
             a0, a1 = ages[i - 1], ages[i]
@@ -125,22 +143,36 @@ def interp_survival(cohort_data: list[tuple], age: float) -> float:
     return float(pcts[-1])
 
 
-def get_cohort_survival(sex: str, birth_year: int, age: float) -> float:
-    """
-    Retourne % vivants pour une cohorte et un âge.
-    Interpole entre les deux cohortes de référence les plus proches.
+def get_cohort_survival(sex: str, birth_year: int, age: float) -> float | None:
+    """% d'une génération encore en vie à un âge donné.
+
+    Seules les générations de référence dont les données atteignent réellement
+    cet âge sont utilisées ; interpoler avec une génération trop jeune pour
+    l'avoir atteint faisait apparaître un creux de survie entre les
+    générations 1960 et 1970, démographiquement impossible.
+
+    Retourne `None` si aucune génération de référence n'a encore atteint cet âge.
     """
     data = COHORT_SURVIVAL[sex]
-    anchor_years = sorted(data.keys())
-    if birth_year <= anchor_years[0]:
-        return interp_survival(data[anchor_years[0]], age)
-    if birth_year >= anchor_years[-1]:
-        return interp_survival(data[anchor_years[-1]], age)
-    lo = max(y for y in anchor_years if y <= birth_year)
-    hi = min(y for y in anchor_years if y >= birth_year)
-    p_lo = interp_survival(data[lo], age)
+    couvrantes = sorted(y for y, ancres in data.items() if ancres[-1][0] >= age)
+    if not couvrantes:
+        return None
+
+    def valeur(annee: int) -> float:
+        return float(interp_survival(data[annee], age))
+
+    # Aucune extrapolation entre générations : au-delà de la dernière
+    # génération ayant atteint cet âge, on retient sa valeur telle quelle.
+    # Prolonger la tendance amplifiait un écart de 5 ans de naissance sur
+    # 10 ans de projection, au prix d'une survie qui remontait avec l'âge.
+    if birth_year <= couvrantes[0]:
+        return valeur(couvrantes[0])
+    if birth_year >= couvrantes[-1]:
+        return valeur(couvrantes[-1])
+
+    lo = max(y for y in couvrantes if y <= birth_year)
+    hi = min(y for y in couvrantes if y >= birth_year)
     if hi == lo:
-        return p_lo
-    p_hi = interp_survival(data[hi], age)
-    w = (birth_year - lo) / (hi - lo)
-    return p_lo + (p_hi - p_lo) * w
+        return valeur(lo)
+    p_lo, p_hi = valeur(lo), valeur(hi)
+    return p_lo + (p_hi - p_lo) * (birth_year - lo) / (hi - lo)

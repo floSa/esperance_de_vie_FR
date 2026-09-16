@@ -1,177 +1,164 @@
-import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from common import (
     COLOR_E0,
     COLOR_FEMMES,
     COLOR_HOMMES,
-    SEX_LABELS,
     apply_layout,
     download_csv,
     fr_num,
+    note_lecture,
     render_sidebar,
     source_note,
 )
-from data.embedded import (
-    E60_SERIES,
-    E65_SERIES,
-    PERIOD_DISTRIBUTION_FEMMES,
-    PERIOD_DISTRIBUTION_HOMMES,
-)
-from data.european import EU_LIFE_EXPECTANCY_2024
-from data.loader import eurostat_to_embedded_format, fetch_eurostat_life_expectancy
+from data import repository as repo
 
 st.set_page_config(page_title="Vue générale · Espérance de vie", page_icon="📈", layout="wide")
 render_sidebar()
 
-st.title("📈 Vue générale — France 1900–2025")
+serie_e0 = repo.serie_par_sexe(0)
+annee_max = int(serie_e0["year"].max())
+derniere = serie_e0.iloc[-1]
 
-# ---------------------------------------------------------------------------
-# Données
-# ---------------------------------------------------------------------------
-
-@st.cache_data
-def build_series() -> pd.DataFrame:
-    rows = []
-    for sexe, dist in (("femmes", PERIOD_DISTRIBUTION_FEMMES), ("hommes", PERIOD_DISTRIBUTION_HOMMES)):
-        for rec in dist:
-            y = rec["year"]
-            rows.append({
-                "year": y,
-                "sexe": SEX_LABELS[sexe],
-                "e0": rec["e0"],
-                "e60": E60_SERIES[sexe][y],
-                "e65": E65_SERIES[sexe][y],
-            })
-    return pd.DataFrame(rows)
-
-
-df = build_series()
-f_last = PERIOD_DISTRIBUTION_FEMMES[-1]
-h_last = PERIOD_DISTRIBUTION_HOMMES[-1]
-f_first = PERIOD_DISTRIBUTION_FEMMES[0]
-h_first = PERIOD_DISTRIBUTION_HOMMES[0]
+st.title(f"📈 Vue générale — France 1900–{annee_max}")
 
 # ---------------------------------------------------------------------------
 # 1. Métriques
 # ---------------------------------------------------------------------------
 
-gain = ((f_last["e0"] - f_first["e0"]) + (h_last["e0"] - h_first["e0"])) / 2
+longue = repo.esperance_vie_longue()
+e0_1900 = float(longue.loc[longue["year"] == 1900, "esperance"].iloc[0])
+
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("e₀ femmes 2025", f"{fr_num(f_last['e0'])} ans")
-c2.metric("e₀ hommes 2025", f"{fr_num(h_last['e0'])} ans")
-c3.metric("Écart F/H", f"{fr_num(f_last['e0'] - h_last['e0'])} ans")
-c4.metric("Gain depuis 1900", f"+{fr_num(gain)} ans", help="Moyenne des gains femmes et hommes")
+c1.metric(f"e₀ femmes {annee_max}", f"{fr_num(derniere['femmes'])} ans")
+c2.metric(f"e₀ hommes {annee_max}", f"{fr_num(derniere['hommes'])} ans")
+c3.metric("Écart F/H", f"{fr_num(derniere['femmes'] - derniere['hommes'])} ans")
+c4.metric(
+    "Gain depuis 1900",
+    f"+{fr_num((derniere['femmes'] + derniere['hommes']) / 2 - e0_1900)} ans",
+    help="Écart entre la moyenne des deux sexes aujourd'hui et l'espérance "
+         "tous sexes confondus de 1900",
+)
 
 # ---------------------------------------------------------------------------
-# 2. Évolution 1900–2025
+# 2. Évolution
 # ---------------------------------------------------------------------------
 
 INDICATEURS = {
-    "Espérance de vie à la naissance": ("e0", "Espérance de vie à la naissance (ans)"),
-    "Espérance de vie à 60 ans": ("e60", "Espérance de vie résiduelle à 60 ans (ans)"),
-    "Espérance de vie à 65 ans": ("e65", "Espérance de vie résiduelle à 65 ans (ans)"),
+    "Espérance de vie à la naissance": (0, "Espérance de vie à la naissance (ans)"),
+    "Espérance de vie à 60 ans": (60, "Années restant à vivre à 60 ans"),
+    "Espérance de vie à 65 ans": (65, "Années restant à vivre à 65 ans"),
 }
 choix = st.radio("Indicateur", list(INDICATEURS), horizontal=True, key="indicateur_page1")
-col, y_label = INDICATEURS[choix]
+age, y_label = INDICATEURS[choix]
+serie = repo.serie_par_sexe(age)
 
-fig = px.line(
-    df,
-    x="year",
-    y=col,
-    color="sexe",
-    markers=True,
-    color_discrete_map={"Femmes": COLOR_FEMMES, "Hommes": COLOR_HOMMES},
-    labels={"year": "Année", col: y_label, "sexe": ""},
-)
-fig.update_traces(line_width=2, marker_size=6)
-for x, txt in ((1918, "WWI 1918"), (1945, "WWII 1945"), (2020, "Covid 2020")):
-    fig.add_vline(x=x, line_dash="dot", line_color="gray", opacity=0.5)
-    fig.add_annotation(x=x, y=1.04, yref="paper", text=txt, showarrow=False, font=dict(size=11))
+fig = go.Figure()
+
+# Pour l'espérance à la naissance, la série longue tous sexes confondus fait
+# apparaître 1918 et 1940, que les séries par sexe (à partir de 1946) ratent.
+if age == 0:
+    fig.add_trace(go.Scatter(
+        x=longue["year"], y=longue["esperance"],
+        line=dict(color="rgba(140,140,140,0.75)", width=1.5),
+        name="Tous sexes (série longue)",
+        hovertemplate="%{x} : %{y:.1f} ans<extra>tous sexes</extra>",
+    ))
+
+for sexe, couleur in (("femmes", COLOR_FEMMES), ("hommes", COLOR_HOMMES)):
+    fig.add_trace(go.Scatter(
+        x=serie["year"], y=serie[sexe],
+        line=dict(color=couleur, width=2.5),
+        name=sexe.capitalize(),
+        hovertemplate="%{x} : %{y:.1f} ans<extra>" + sexe + "</extra>",
+    ))
+
+if age == 0:
+    for x, txt in ((1918, "1918"), (1940, "1940"), (2020, "Covid")):
+        fig.add_vline(x=x, line_dash="dot", line_color="gray", opacity=0.5)
+        fig.add_annotation(x=x, y=1.04, yref="paper", text=txt, showarrow=False,
+                           font=dict(size=11))
+    fig.update_xaxes(range=[1900, annee_max])
+
+fig.update_yaxes(title=y_label)
+fig.update_xaxes(title="Année")
 apply_layout(fig, height=480, legend=dict(orientation="h", yanchor="bottom", y=1.08, x=0))
-if col == "e60" or col == "e65":
-    st.caption("Nombre d'années restant à vivre à cet âge, selon la table du moment de chaque année.")
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width='stretch')
+
+if age == 0:
+    note_lecture(
+        "L'axe vertical est le nombre d'années qu'un nouveau-né vivrait si les "
+        "conditions de mortalité de son année de naissance restaient figées toute "
+        "sa vie. Ce n'est donc <em>pas</em> une prédiction, mais un résumé de la "
+        "mortalité de l'année. C'est ce qui explique les chutes brutales : en "
+        "<strong>1918</strong>, la grippe espagnole et la guerre font tomber "
+        "l'indicateur à <strong>34,8 ans</strong> contre 43,0 l'année précédente — "
+        "puis il remonte aussitôt. La courbe grise couvre les deux sexes depuis "
+        "1816 ; les courbes rose et bleue commencent en 1946, première année où "
+        "l'INSEE publie le détail par sexe.",
+        f"{repo.millesime('esperance_vie_fr_longue_owid')} · "
+        f"{repo.millesime('esperance_vie_fr_insee')}",
+    )
+else:
+    note_lecture(
+        f"Chaque point indique combien d'années il reste à vivre, en moyenne, à "
+        f"une personne qui a <strong>atteint {age} ans</strong> cette année-là. "
+        "Ces courbes montent plus lentement que l'espérance à la naissance : le "
+        "gros des progrès du XX<sup>e</sup> siècle a porté sur la mortalité "
+        "infantile, dont ces personnes ont déjà réchappé. Une hausse ici traduit "
+        "donc un vrai gain aux âges élevés.",
+        repo.millesime("esperance_vie_fr_insee") if age == 60
+        else repo.millesime("esperance_vie_fr_65_eurostat"),
+    )
 
 # ---------------------------------------------------------------------------
 # 3. Comparaison européenne
 # ---------------------------------------------------------------------------
 
-st.subheader("🇪🇺 Comparaison européenne")
+annee_eu = repo.annee_europe()
+st.subheader(f"🇪🇺 Comparaison européenne ({annee_eu})")
 
-with st.expander("🔄 Rafraîchir via l'API Eurostat (demo_mlexpec, sans authentification)"):
-    annee_api = st.selectbox("Année", [2024, 2023, 2022], index=0, key="annee_api_eurostat")
-    if st.button("Interroger l'API"):
-        with st.spinner("Requête Eurostat en cours…"):
-            raw = fetch_eurostat_life_expectancy(annee_api)
-        refreshed = eurostat_to_embedded_format(raw) if raw is not None and len(raw) else []
-        if refreshed:
-            st.session_state["eu_data"] = refreshed
-            st.session_state["eu_year"] = annee_api
-            st.success(f"{len(refreshed)} pays rafraîchis depuis Eurostat ({annee_api}).")
-        else:
-            st.warning("API Eurostat injoignable ou réponse vide — données embarquées conservées.")
-
-eu_data = st.session_state.get("eu_data")
-eu_year = st.session_state.get("eu_year", 2024)
-eu_source = "données embarquées (Eurostat 2024)"
-if eu_data is None:
-    eu_data = EU_LIFE_EXPECTANCY_2024
-else:
-    eu_source = f"API Eurostat, année {eu_year}"
-
-eu_df = pd.DataFrame(eu_data)
-eu_avg_row = eu_df[eu_df["code"] == "EU"]
-eu_avg = float(eu_avg_row["e0_total"].iloc[0]) if len(eu_avg_row) else None
-pays_df = eu_df[eu_df["code"] != "EU"].dropna(subset=["e0_total"]).copy()
-pays_df = pays_df.sort_values("e0_total", ascending=False)
+pays = repo.europe()
+moyenne = repo.moyenne_ue()
 
 fig_eu = px.bar(
-    pays_df,
-    x="e0_total",
-    y="country",
-    orientation="h",
-    color="e0_total",
-    color_continuous_scale="Blues",
-    labels={"e0_total": "Espérance de vie totale (ans)", "country": ""},
+    pays, x="e0_total", y="country", orientation="h",
+    color="e0_total", color_continuous_scale="Blues",
+    labels={"e0_total": "Espérance de vie à la naissance (ans)", "country": ""},
 )
 fig_eu.update_traces(
     marker_line_color=COLOR_E0,
-    marker_line_width=[2.5 if c == "FR" else 0 for c in pays_df["code"]],
+    marker_line_width=[2.5 if c == "FR" else 0 for c in pays["code"]],
+    hovertemplate="%{y} : %{x:.1f} ans<extra></extra>",
 )
 fig_eu.update_yaxes(categoryorder="total ascending")
 fig_eu.update_xaxes(range=[70, 86])
-if eu_avg is not None:
+if moyenne is not None:
     fig_eu.add_vline(
-        x=eu_avg,
-        line_dash="dash",
-        line_color=COLOR_E0,
-        annotation_text=f"Moyenne UE-27 : {fr_num(eu_avg)} ans",
+        x=moyenne, line_dash="dash", line_color=COLOR_E0,
+        annotation_text=f"Moyenne UE-27 : {fr_num(moyenne)} ans",
         annotation_position="top left",
     )
-fr_row = pays_df[pays_df["code"] == "FR"]
-if len(fr_row):
-    fig_eu.add_annotation(
-        x=float(fr_row["e0_total"].iloc[0]),
-        y="France",
-        text="🇫🇷 France",
-        showarrow=True,
-        arrowhead=2,
-        ax=45,
-        ay=0,
-        font=dict(color=COLOR_E0, size=13),
-    )
 apply_layout(fig_eu, height=680, coloraxis_showscale=False)
-st.plotly_chart(fig_eu, use_container_width=True)
-st.caption(f"Source affichée : {eu_source}. La France est encadrée en orange.")
+st.plotly_chart(fig_eu, width='stretch')
+
+rang_fr = int(pays.index[pays["code"] == "FR"][0]) + 1
+note_lecture(
+    f"Un pays par barre, classé du plus élevé au plus bas, tous sexes confondus. "
+    f"La <strong>France est cerclée d'orange</strong> et arrive "
+    f"<strong>{rang_fr}<sup>e</sup> sur {len(pays)}</strong>, au-dessus de la "
+    f"moyenne UE-27 (trait orange pointillé). L'échelle démarre à 70 ans pour "
+    "rendre les écarts lisibles : visuellement les barres semblent très "
+    "inégales, mais l'ensemble des 27 tient en un peu plus de 8 ans.",
+    repo.millesime("esperance_vie_europe_eurostat"),
+)
 
 # ---------------------------------------------------------------------------
 # 4. Tableaux récapitulatifs
 # ---------------------------------------------------------------------------
 
-pays_df["ecart_fh"] = pays_df["e0_f"] - pays_df["e0_m"]
-col_g, col_d = st.columns(2)
 fmt = {
     "e0_f": st.column_config.NumberColumn("e₀ femmes", format="%.1f"),
     "e0_m": st.column_config.NumberColumn("e₀ hommes", format="%.1f"),
@@ -179,22 +166,20 @@ fmt = {
     "ecart_fh": st.column_config.NumberColumn("Écart F−H", format="%.1f"),
     "country": st.column_config.TextColumn("Pays"),
 }
+col_g, col_d = st.columns(2)
 with col_g:
     st.markdown("**Top 10 — e₀ femmes le plus élevé**")
-    st.dataframe(
-        pays_df.nlargest(10, "e0_f")[["country", "e0_f", "e0_m", "e0_total"]],
-        column_config=fmt,
-        hide_index=True,
-        use_container_width=True,
-    )
+    st.dataframe(pays.nlargest(10, "e0_f")[["country", "e0_f", "e0_m", "e0_total"]],
+                 column_config=fmt, hide_index=True, width='stretch')
 with col_d:
     st.markdown("**Top 10 — écart femmes/hommes le plus important**")
-    st.dataframe(
-        pays_df.nlargest(10, "ecart_fh")[["country", "ecart_fh", "e0_f", "e0_m"]],
-        column_config=fmt,
-        hide_index=True,
-        use_container_width=True,
-    )
+    st.dataframe(pays.nlargest(10, "ecart_fh")[["country", "ecart_fh", "e0_f", "e0_m"]],
+                 column_config=fmt, hide_index=True, width='stretch')
+st.caption(
+    "L'écart femmes−hommes est le plus fort dans les pays baltes et le plus "
+    "faible aux Pays-Bas et en Suède : il reflète surtout la surmortalité "
+    "masculine aux âges actifs."
+)
 
-download_csv(df, "vue_generale")
+download_csv(serie, "vue_generale")
 source_note()
