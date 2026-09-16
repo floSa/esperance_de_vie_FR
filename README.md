@@ -114,6 +114,9 @@ Streamlit) ; chaque page propose un export CSV.
 | Série longue avant 1946 | OWID, tous sexes confondus | Seule source ouverte continue ; le détail par sexe n'existe pas avant 1946 |
 | Survie de génération hors plage | Valeur de la dernière génération ayant atteint cet âge | Extrapoler produisait une survie qui remontait avec l'âge |
 | Couleurs | Palette fixe par entité (femmes rose, hommes bleu, e₀ orange) | Lecture cohérente entre les six pages |
+| Découpage des pages | Une question, une source, une période par page | Une figure mêlant deux périmètres est illisible |
+| Axe des années, page « par âge » | Fixé à 1998–2024 quel que soit l'âge | Un axe qui bouge avec le sélecteur rend deux sélections incomparables |
+| Survie au-delà de 95 ans | Affichage borné au dernier âge documenté, écart signalé | Mieux vaut afficher moins que d'inventer une valeur |
 
 ## Résultats clés
 
@@ -136,7 +139,7 @@ Streamlit) ; chaque page propose un export CSV.
 ```
 ├── app.py                        # point d'entrée Streamlit
 ├── common.py                     # palette, thème Plotly, survie de génération
-├── pages/                        # les six vues
+├── pages/                        # les six vues (une question par page)
 ├── data/
 │   ├── repository.py             # accès aux données générées
 │   ├── sources/                  # CSV + manifest.json (régénérés)
@@ -145,7 +148,7 @@ Streamlit) ; chaque page propose un export CSV.
 ├── scripts/
 │   ├── sources.py                # un fetcher par source, avec provenance
 │   ├── refresh_data.py           # régénère data/sources/
-│   └── check_pages.py            # rend les 5 pages et détecte les erreurs
+│   └── check_pages.py            # rend les 7 pages et détecte les erreurs
 └── tests/                        # invariants démographiques
 ```
 
@@ -154,13 +157,14 @@ Streamlit) ; chaque page propose un export CSV.
 ```bash
 uv run ruff check .                     # lint
 uv run pytest -q                        # invariants démographiques
-uv run python scripts/check_pages.py    # rendu des 5 pages
+uv run python scripts/check_pages.py    # rendu des 7 pages
 ```
 
 Les tests vérifient des propriétés qui doivent tenir quelles que soient les
 valeurs : la survie décroît avec l'âge, elle ne régresse pas d'une génération à
 la suivante, elle reste dans [0, 100], et aucune génération ne se voit attribuer
-de survie à un âge qu'elle n'a pas atteint.
+de survie à un âge qu'elle n'a pas atteint. Ce sont eux qui ont mis au jour un
+creux de survie artificiel entre les générations 1963 et 1967.
 
 ## Sources
 
