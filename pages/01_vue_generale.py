@@ -69,6 +69,18 @@ c5.metric(
     help=f"Première année disponible pour cet âge : {an_ancien}",
 )
 
+if age in repo.AGES_INSEE:
+    st.caption(
+        f"**Période couverte : {an_ancien} → {an_recent}.** L'INSEE publie cet "
+        "âge depuis 1946."
+    )
+else:
+    st.caption(
+        f"**Période couverte : {an_ancien} → {an_recent}.** L'INSEE ne publie "
+        "que cinq âges — 0, 1, 20, 40 et 60 ans — et eux seuls remontent à 1946. "
+        "Cet âge-ci vient d'Eurostat, dont la série française démarre en 1998."
+    )
+
 if age != 0:
     st.caption(
         f"Une femme ayant atteint {age} ans en {an_recent} peut espérer vivre "
@@ -116,38 +128,54 @@ st.plotly_chart(fig, width='stretch')
 
 if age == 0:
     note_lecture(
-        "L'axe vertical est le nombre d'années qu'un nouveau-né vivrait si les "
-        "conditions de mortalité de son année de naissance restaient figées toute "
-        "sa vie. Ce n'est donc <em>pas</em> une prédiction, mais un résumé de la "
-        "mortalité de l'année. C'est ce qui explique les chutes brutales : en "
-        "<strong>1918</strong>, la grippe espagnole et la guerre font tomber "
-        "l'indicateur à <strong>34,8 ans</strong> contre 43,0 l'année précédente — "
-        "puis il remonte aussitôt. La courbe grise couvre les deux sexes depuis "
-        "1816 ; les courbes rose et bleue commencent en 1946, première année où "
-        "l'INSEE publie le détail par sexe.",
+        "L'axe vertical est un nombre d'années."
+        "<br>"
+        "Il indique combien de temps vivrait un nouveau-né si la mortalité de "
+        "son année de naissance ne changeait plus jamais."
+        "<br><br>"
+        "Ce n'est pas une prédiction. C'est un résumé de la mortalité d'une "
+        "année."
+        "<br>"
+        "D'où les chutes brutales : en <strong>1918</strong>, la valeur tombe à "
+        "<strong>34,8 ans</strong>, contre 43,0 l'année d'avant. Puis elle "
+        "remonte aussitôt."
+        "<br><br>"
+        "<strong>Les trois courbes.</strong>"
+        "<br>"
+        "La grise couvre les deux sexes réunis, depuis 1816."
+        "<br>"
+        "La rose et la bleue démarrent en 1946. Avant cette date, l'INSEE ne "
+        "publie pas le détail par sexe.",
         f"{repo.millesime('esperance_vie_fr_longue_owid')} · "
         f"{repo.millesime('esperance_vie_fr_insee')}",
     )
 else:
     exemple = round(float(derniere["femmes"]))
     note_lecture(
-        f"L'axe vertical est le nombre d'années qu'il reste à vivre, en moyenne, "
-        f"à une personne <strong>déjà âgée de {age} ans</strong>. Ce n'est donc "
-        f"pas un âge mais une durée : lire un point à {exemple} signifie "
-        f"« encore {exemple} ans à vivre », soit un décès vers "
-        f"{age + exemple} ans."
+        "L'axe vertical est une durée, pas un âge."
+        "<br>"
+        f"Il indique le nombre d'années qu'il reste à vivre à une personne de "
+        f"<strong>{age} ans</strong>."
         "<br><br>"
-        f"Cette durée ne concerne que les personnes ayant atteint {age} ans. "
-        "Celles décédées avant n'entrent pas dans le calcul — c'est pourquoi "
-        f"{age} + cette durée dépasse l'espérance de vie à la naissance."
+        f"Exemple : un point à {exemple} se lit « encore {exemple} ans à "
+        f"vivre ». Soit un décès vers {age + exemple} ans."
         "<br><br>"
+        f"<strong>Seuls comptent ceux qui ont atteint {age} ans.</strong>"
+        "<br>"
+        "Les personnes décédées avant n'entrent pas dans le calcul."
+        "<br>"
+        f"C'est pourquoi {age} + {exemple} dépasse l'espérance de vie à la "
+        "naissance."
+        "<br><br>"
+        f"<strong>Pourquoi la courbe démarre en {an_ancien} ?</strong>"
+        "<br>"
         + (
-            f"La série commence en {an_ancien} : l'INSEE publie cet âge depuis "
-            "1946."
+            "L'INSEE publie cet âge depuis 1946."
             if age in repo.AGES_INSEE else
-            f"La série commence en {an_ancien}. L'INSEE ne publie que les âges "
-            "0, 1, 20, 40 et 60 ans, qui remontent à 1946 ; tous les autres âges "
-            "viennent d'Eurostat, dont la série française démarre en 1998."
+            "L'INSEE ne publie que cinq âges : 0, 1, 20, 40 et 60 ans. Eux "
+            "remontent à 1946."
+            "<br>"
+            "Tous les autres âges viennent d'Eurostat, qui commence en 1998."
         ),
         repo.millesime(repo.source_de_l_age(age)),
     )
