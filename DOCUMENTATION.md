@@ -109,7 +109,7 @@ des cohortes étudiées.
 |---|---|---|
 | `COHORT_SURVIVAL` | `{sexe: {année_naissance: [(âge, % vivants), …]}}`, 1930→1990 | Aucune institution ne publie de tables de mortalité **par génération** pour la France |
 | `PERIOD_DISTRIBUTION_FEMMES` / `_HOMMES` | `{year, e0, q1, median, q3, iqr}`, 1900→2010 | Eurostat ne remonte pas avant 2014 |
-| `RESIDUAL_LIFE_2025` | `{sexe: {âge: années restantes}}` | L'INSEE ne publie que les âges 0, 1, 20, 40 et 60 |
+| `RESIDUAL_LIFE_2025` | `{sexe: {âge: années restantes}}` | Reliquat : Eurostat publie désormais tous les âges, cette table peut être remplacée (§ 9) |
 | `SEX_RATIO` | `femmes 0,487 · hommes 0,513` | Constante démographique |
 
 Précision annoncée : **±5 %** sur la survie par génération.
@@ -166,6 +166,10 @@ Au-delà de la génération la plus récente de $\mathcal{C}(a)$, **on retient s
 valeur telle quelle**, sans extrapoler la tendance entre générations. Si
 $\mathcal{C}(a)$ est vide, la fonction retourne `None`.
 
+`age_max_documente(sexe)` donne l'âge le plus élevé pour lequel une valeur
+existe — 95 ans. Les pages doivent s'y borner : la génération 1930 a dépassé
+cet âge, et lui demander sa survie à son âge réel renvoie `None`.
+
 > **Décision** — *Pas d'extrapolation entre générations* **plutôt que**
 > prolongation de la tendance, **parce que** cette dernière amplifiait un écart
 > de 5 années de naissance sur 10 ans de projection et produisait une survie qui
@@ -176,11 +180,16 @@ $\mathcal{C}(a)$ est vide, la fonction retourne `None`.
 ### 3.4 Effectifs de cohorte — page « Explorateur de cohorte »
 
 $$\text{naissances}_{\text{sexe}} = \text{naissances}[\text{année}] \times \text{SEX\_RATIO}[\text{sexe}]$$
-$$\text{vivants} = \text{naissances} \times \dfrac{p(\text{âge actuel})}{100}, \qquad \text{âge actuel} = \text{année courante} - \text{année de naissance}$$
+$$\text{vivants} = \text{naissances} \times \dfrac{p(a^{*})}{100}, \qquad a^{*} = \min(\text{âge actuel},\; 95)$$
 
-L'espérance résiduelle affichée provient de `RESIDUAL_LIFE_2025` (table du
-moment), interpolée à l'âge courant (plafonné à 95 ans), et présentée sous forme
-d'**âge de décès moyen attendu** : $\text{âge actuel} + e_{\text{résiduelle}}$.
+avec $\text{âge actuel} = \text{année courante} - \text{année de naissance}$.
+Le plafond $a^{*}$ vient de `age_max_documente()` : les générations nées avant
+1931 ont dépassé le dernier âge documenté. La page affiche alors l'âge
+réellement utilisé et signale l'écart.
+
+L'espérance résiduelle provient de `RESIDUAL_LIFE_2025` (table du moment),
+interpolée à l'âge courant, et présentée sous forme d'**âge de décès moyen
+attendu** : $\text{âge actuel} + e_{\text{résiduelle}}$.
 
 ### 3.5 Décodage Eurostat JSON-stat — `_jsonstat`
 
@@ -222,6 +231,10 @@ table de mortalité.
 | Espérance résiduelle | Table **du moment** 2025 | Donnée disponible ; l'écran avertit qu'elle **sous-estime** la survie réelle |
 | Couleurs | Palette fixe par entité (femmes `#ec4899`, hommes `#0284c7`, e₀ `#f97316`) | Lecture cohérente entre les six pages ; jamais recyclée |
 | Année courante | Dérivée de `date.today()` | Évite une péremption silencieuse au 1ᵉʳ janvier |
+| Découpage des pages | Une question, une source, une période par page | Une figure mêlant deux périmètres est illisible : c'est ce qui a motivé le passage de quatre à six pages |
+| Axe des années, page « par âge » | Fixé à 1998–2024 quel que soit l'âge | Un axe qui bouge avec le sélecteur rend deux sélections incomparables |
+| Survie au-delà du dernier âge documenté | Affichage borné, écart signalé | Mieux vaut afficher moins que d'inventer une valeur |
+| Sélecteur de sexe | Liste déroulante sur les trois pages concernées | Un seul geste à apprendre |
 
 > **Attention** — L'app affiche elle-même l'avertissement clé (page cohorte) :
 > *les tables du moment sous-estiment historiquement la survie des générations*.
@@ -325,6 +338,12 @@ APIs publiques ──► scripts/refresh_data.py ──► data/sources/*.csv + 
   âges au décès reposent sur des **tables du moment**. Elles décrivent une
   génération fictive soumise aux conditions d'une seule année et **sous-estiment**
   la survie réelle des cohortes en cours.
+- **Générations les plus anciennes tronquées** : les tables de survie s'arrêtent
+  à 95 ans. Les générations nées avant 1931 ont dépassé cet âge ; l'explorateur
+  de cohorte affiche alors les effectifs à 95 ans et le signale.
+- **Espérance de vie par âge limitée à 1998** : Eurostat, seule source couvrant
+  les 96 âges, ne remonte pas plus loin. Les onze âges de 85 à 95 ans ne
+  commencent même qu'en 2014.
 - **Millésime figé** : les données ne sont à jour que du dernier
   `refresh_data` — date d'extraction consultable dans le manifeste et affichée
   sous chaque graphique.
@@ -349,16 +368,19 @@ APIs publiques ──► scripts/refresh_data.py ──► data/sources/*.csv + 
 ```bash
 uv run ruff check .                     # lint
 uv run pytest -q                        # invariants démographiques
-uv run python scripts/check_pages.py    # rendu des 5 pages
+uv run python scripts/check_pages.py    # rendu des 7 pages
 ```
 
 Les tests de [tests/test_survie_cohorte.py](tests/test_survie_cohorte.py) portent
 sur des **propriétés**, pas sur des valeurs : la survie décroît avec l'âge, elle
 ne régresse pas d'une génération à la suivante (tolérance 0,5 point, l'arrondi
 des ancres étant à ±5 %), elle reste dans [0, 100], et aucune génération ne se
-voit attribuer de survie à un âge qu'elle n'a pas atteint. Ce sont ces invariants
-qui ont mis au jour le creux de survie artificiel des générations 1963–1967, et
-deux ancres corrompues de la génération 1965.
+voit attribuer de survie à un âge qu'elle n'a pas atteint. Un dernier test
+vérifie que `age_max_documente()` reste exploitable par toutes les générations
+du curseur.
+
+Ce sont ces invariants qui ont mis au jour le creux de survie artificiel des
+générations 1963–1967, et deux ancres corrompues de la génération 1965.
 
 La CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) exécute les trois
 commandes ci-dessus à chaque push et chaque pull request.
