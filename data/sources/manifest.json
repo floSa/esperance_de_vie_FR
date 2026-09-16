@@ -1,0 +1,110 @@
+{
+  "esperance_vie_fr_insee": {
+    "fichier": "esperance_vie_fr_insee.csv",
+    "libelle": "Espérance de vie par sexe et âge — France métropolitaine",
+    "fournisseur": "INSEE",
+    "jeu": "DS_DECES_MORTALITE_SERIES (EC_MEASURE=LEXPEC)",
+    "url": "https://api.insee.fr/melodi/data/DS_DECES_MORTALITE_SERIES",
+    "parametres": {
+      "FREQ": "A",
+      "EC_MEASURE": "LEXPEC",
+      "GEO": "2025-FRANCE-FM"
+    },
+    "annees": "1946–2025",
+    "ages": [
+      0,
+      1,
+      20,
+      40,
+      60
+    ],
+    "lignes": 800,
+    "extrait_le": "2026-09-16T08:45:39+00:00"
+  },
+  "esperance_vie_fr_65_eurostat": {
+    "fichier": "esperance_vie_fr_65_eurostat.csv",
+    "libelle": "Espérance de vie à 65 ans, France, par sexe",
+    "fournisseur": "Eurostat",
+    "jeu": "demo_mlexpec",
+    "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_mlexpec",
+    "parametres": {
+      "geo": "FR",
+      "age": "Y65",
+      "sex": [
+        "F",
+        "M"
+      ]
+    },
+    "millesime_source": "2026-06-04T23:00:00+0200",
+    "annees": "1998–2024",
+    "lignes": 54,
+    "extrait_le": "2026-09-16T08:45:39+00:00"
+  },
+  "esperance_vie_fr_longue_owid": {
+    "fichier": "esperance_vie_fr_longue_owid.csv",
+    "libelle": "Espérance de vie à la naissance, France, tous sexes — séries longues",
+    "fournisseur": "Our World in Data (d'après HMD et ONU)",
+    "jeu": "grapher/life-expectancy",
+    "url": "https://ourworldindata.org/grapher/life-expectancy.csv",
+    "parametres": {
+      "filtre": "Code == FRA"
+    },
+    "annees": "1816–2023",
+    "lignes": 208,
+    "extrait_le": "2026-09-16T08:45:39+00:00"
+  },
+  "naissances_fr_insee": {
+    "fichier": "naissances_fr_insee.csv",
+    "libelle": "Naissances vivantes annuelles — France métropolitaine",
+    "fournisseur": "INSEE",
+    "jeu": "DS_NAISSANCES_FECONDITE_SERIES (EC_MEASURE=LVB_PLACE_REG)",
+    "url": "https://api.insee.fr/melodi/data/DS_NAISSANCES_FECONDITE_SERIES",
+    "parametres": {
+      "FREQ": "A",
+      "EC_MEASURE": "LVB_PLACE_REG",
+      "GEO": "2025-FRANCE-FM"
+    },
+    "annees": "1901–2025",
+    "lignes": 125,
+    "extrait_le": "2026-09-16T08:45:39+00:00"
+  },
+  "distribution_deces_eurostat": {
+    "fichier": "distribution_deces_eurostat.csv",
+    "libelle": "Distribution des âges au décès (quartiles, IQR, écart-type)",
+    "fournisseur": "Eurostat",
+    "jeu": "demo_mlifetable (indic_de=NUMBERDYING, soit dx)",
+    "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_mlifetable",
+    "parametres": {
+      "geo": "FR",
+      "indic_de": "NUMBERDYING",
+      "sex": [
+        "F",
+        "M"
+      ]
+    },
+    "millesime_source": "2026-06-04T23:00:00+0200",
+    "annees": "2014–2024",
+    "lignes": 22,
+    "extrait_le": "2026-09-16T08:45:39+00:00"
+  },
+  "esperance_vie_europe_eurostat": {
+    "fichier": "esperance_vie_europe_eurostat.csv",
+    "libelle": "Espérance de vie à la naissance par pays européen (2024)",
+    "fournisseur": "Eurostat",
+    "jeu": "demo_mlexpec",
+    "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_mlexpec",
+    "parametres": {
+      "age": "Y_LT1",
+      "sex": [
+        "F",
+        "M",
+        "T"
+      ],
+      "time": "2024"
+    },
+    "millesime_source": "2026-06-04T23:00:00+0200",
+    "annee_retenue": 2024,
+    "lignes": 41,
+    "extrait_le": "2026-09-16T08:45:40+00:00"
+  }
+}
