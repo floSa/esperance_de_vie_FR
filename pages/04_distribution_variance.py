@@ -48,7 +48,7 @@ fig.add_trace(go.Scatter(
 fig.add_trace(go.Scatter(
     x=df["year"], y=df["q3"],
     fill="tonexty", fillcolor=zone_color, line=dict(width=0),
-    name="Moitié centrale des décès (Q1–Q3)",
+    name="Moitié centrale des décès",
     hovertemplate="Q3 : %{y:.0f} ans<extra></extra>",
 ))
 fig.add_trace(go.Scatter(
@@ -58,8 +58,9 @@ fig.add_trace(go.Scatter(
 ))
 fig.add_trace(go.Scatter(
     x=df["year"], y=df["e0"],
-    line=dict(color=COLOR_E0, width=2, dash="dash"), name="Espérance de vie e₀",
-    hovertemplate="e₀ : %{y:.1f} ans<extra></extra>",
+    line=dict(color=COLOR_E0, width=2, dash="dash"),
+    name="Espérance de vie à la naissance (moyenne)",
+    hovertemplate="Espérance de vie : %{y:.1f} ans<extra></extra>",
 ))
 fig.add_vline(
     x=PREMIERE_ANNEE_MESUREE, line_dash="dot", line_color="gray", opacity=0.6,
@@ -71,58 +72,47 @@ apply_layout(fig, height=520, legend=dict(orientation="h", yanchor="bottom", y=1
              title=f"Distribution des âges au décès — {SEX_LABELS[sexe]}")
 st.plotly_chart(fig, width='stretch')
 
-an_min, an_max = int(df["year"].iloc[0]), int(df["year"].iloc[-1])
-med_fin = float(df["median"].iloc[-1])
-e0_fin = float(df["e0"].iloc[-1])
-ecart_median_e0 = med_fin - e0_fin
-ecart_median_e0_debut = float(df["median"].iloc[0] - df["e0"].iloc[0])
-q1_fin, q3_fin = float(df["q1"].iloc[-1]), float(df["q3"].iloc[-1])
+
+# Année d'illustration : assez ancienne pour que l'écart moyenne / médiane
+# saute aux yeux, ce qui est précisément le point difficile du graphique.
+AN_EXEMPLE = 1920
+ligne_ex = df[df["year"] == AN_EXEMPLE]
+ligne_ex = ligne_ex.iloc[0] if len(ligne_ex) else df.iloc[0]
+an_exemple = int(ligne_ex["year"])
+med_ex = float(ligne_ex["median"])
+q1_ex, q3_ex = float(ligne_ex["q1"]), float(ligne_ex["q3"])
+e0_ex = float(ligne_ex["e0"])
 
 note_lecture(
-    "<strong>Axe horizontal</strong> : les années, "
-    f"de {an_min} à {an_max}."
-    "<br>"
-    "<strong>Axe vertical</strong> : un âge, en années."
-    "<br>"
-    "<strong>Trois éléments</strong> : une bande colorée, un trait plein, un "
-    "tiret orange."
+    "<strong>Une année n'est pas une génération.</strong> Elle désigne les "
+    "conditions de mortalité de cette année-là. Lire 1920, c'est répondre à : "
+    "« si toute une vie se déroulait avec la mortalité de 1920, à quel âge "
+    "mourrait-on ? »"
     "<br><br>"
-    "<strong>La bande</strong> contient la moitié des décès. Un quart a lieu "
-    "avant son bord bas, un quart après son bord haut."
-    f"<br>En {an_max} : de {q1_fin:.0f} à {q3_fin:.0f} ans."
-    "<br><br>"
-    "<strong>Le trait plein</strong> est l'âge médian au décès. La moitié des "
-    f"gens meurent avant, la moitié après. En {an_max} : {med_fin:.0f} ans."
-    "<br><br>"
-    "<strong>Le tiret orange</strong> est l'espérance de vie. En "
-    f"{an_max} : {fr_num(e0_fin)} ans."
-    "<br><br>"
-    "<strong>Regarde l'écart entre le trait plein et le tiret orange.</strong>"
+    f"<strong>Exemple, {SEX_LABELS[sexe].lower()} en {an_exemple} :</strong>"
     "<br>"
-    f"En {an_min}, il était de {fr_num(ecart_median_e0_debut)} ans."
-    f"<br>En {an_max}, il n'est plus que de {fr_num(ecart_median_e0)} an"
-    f"{'s' if ecart_median_e0 >= 2 else ''}. Les deux se rejoignent."
+    f"Le trait plein est à {med_ex:.0f} ans. C'est l'âge médian : la moitié "
+    f"meurt avant {med_ex:.0f} ans, la moitié après."
+    "<br>"
+    f"La bande va de {q1_ex:.0f} à {q3_ex:.0f} ans. C'est là que meurent les "
+    f"50 % du milieu. Un quart meurt avant {q1_ex:.0f} ans, un quart après "
+    f"{q3_ex:.0f} ans."
+    "<br>"
+    f"Le tiret orange est à {fr_num(e0_ex)} ans. C'est l'espérance de vie à la "
+    "naissance, autrement dit la moyenne."
     "<br><br>"
-    "Les deux ne mesurent pas la même chose."
-    "<br>"
-    "L'espérance de vie est une moyenne. Chaque décès précoce la tire vers le "
-    "bas."
-    "<br>"
-    "La médiane coupe les décès en deux. Un bébé mort à un an y compte pour "
-    "une personne, pas pour 80 années perdues."
+    f"<strong>Pourquoi la moyenne ({fr_num(e0_ex)}) est-elle plus basse que la "
+    f"médiane ({med_ex:.0f}) ?</strong> Parce qu'en {an_exemple} beaucoup "
+    f"d'enfants mouraient — le bord bas de la bande est à {q1_ex:.0f} ans. "
+    "Chaque mort d'enfant tire la moyenne vers le bas, pas la médiane."
     "<br><br>"
-    "En 1900, la mortalité infantile était massive : elle écrasait la moyenne "
-    "bien plus que la médiane, d'où le grand écart."
-    "<br>"
-    "Aujourd'hui, presque plus personne ne meurt jeune. Les deux mesures "
-    "convergent."
+    "<strong>Ce que raconte le graphique de gauche à droite :</strong> la "
+    "bande monte et se resserre. On meurt de plus en plus vieux, et dans une "
+    "fourchette d'âge de plus en plus étroite."
     "<br><br>"
-    f"<strong>Le trait pointillé vertical, en {PREMIERE_ANNEE_MESUREE}</strong>, "
-    "sépare deux régimes."
-    "<br>"
-    "À gauche : des estimations historiques."
-    "<br>"
-    "À droite : des valeurs calculées sur les décès réels publiés par Eurostat.",
+    f"<strong>Le trait vertical de {PREMIERE_ANNEE_MESUREE}</strong> sépare "
+    "les estimations historiques (à gauche) des décès réellement publiés par "
+    "Eurostat (à droite).",
     f"{repo.millesime('distribution_deces_eurostat')} · estimations historiques "
     "avant " + str(PREMIERE_ANNEE_MESUREE),
 )
