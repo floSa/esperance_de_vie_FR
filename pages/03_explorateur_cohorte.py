@@ -4,10 +4,10 @@ import streamlit as st
 
 from common import (
     COLOR_DECEDES,
+    COLOR_VIVANTS_ZONE,
     CURRENT_YEAR,
     SEX_COLORS,
     SEX_LABELS,
-    SEX_ZONES,
     apply_layout,
     download_csv,
     fr_num,
@@ -17,6 +17,7 @@ from common import (
     persist,
     render_sidebar,
     source_note,
+    valeur_selectionnee,
 )
 from data import repository as repo
 from data.embedded import RESIDUAL_LIFE_2025, SEX_RATIO
@@ -42,6 +43,10 @@ with col_annee:
     annee_naissance = st.slider("Année de naissance", 1930, 1990, key="annee_naissance")
 
 age_actuel = CURRENT_YEAR - annee_naissance
+valeur_selectionnee(
+    "Génération suivie",
+    f"Né·e en {annee_naissance} — {age_actuel} ans en {CURRENT_YEAR}",
+)
 
 # ---------------------------------------------------------------------------
 # 2. Métriques
@@ -103,7 +108,7 @@ fig.add_trace(go.Scatter(
 ))
 fig.add_trace(go.Scatter(
     x=curve["age"], y=[100] * len(curve),
-    fill="tonexty", fillcolor=SEX_ZONES[sexe],
+    fill="tonexty", fillcolor=COLOR_VIVANTS_ZONE,
     line=dict(width=0),
     name="Encore en vie",
     customdata=curve["vivants_pct"],

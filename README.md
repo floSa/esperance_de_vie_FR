@@ -53,8 +53,8 @@ toute la profondeur historique — « France entière » intègre les DOM à par
 
 ### Ce qui reste estimé
 
-La **survie par génération** (pages « Explorateur de cohorte » et « Âge fixe ×
-générations ») n'a aucune source ouverte : aucune institution ne publie de
+La **survie par génération** (pages « Explorateur de cohorte » et « Survie à un
+âge donné ») n'a aucune source ouverte : aucune institution ne publie de
 tables de mortalité par cohorte pour la France. Ces valeurs restent des
 approximations dans `data/embedded.py`, précision estimée à **±5 %**. Il en va
 de même des quartiles des âges au décès **avant 2014**, Eurostat ne remontant
@@ -79,7 +79,7 @@ flowchart LR
     p1[Vue générale]
     p2[Distribution & variance]
     p3[Explorateur de cohorte]
-    p4[Âge fixe × générations]
+    p4[Survie à un âge donné]
   end
   insee & euro & owid --> refresh --> csv --> repo --> common
   emb --> common
@@ -93,7 +93,7 @@ flowchart LR
 | **Vue générale** | Évolution annuelle de e₀ / e₆₀ / e₆₅, série longue depuis 1816 faisant apparaître 1918 et 1940, comparaison des 27 pays de l'UE |
 | **Distribution & variance** | Bande Q1–Q3 des âges au décès, médiane vs e₀, évolution de l'IQR : la **compression de la mortalité** |
 | **Explorateur de cohorte** | Pour une année de naissance et un sexe : courbe de survie, effectifs nés / vivants / décédés, âge de décès moyen attendu |
-| **Âge fixe × générations** | À âge constant, part de la génération encore en vie selon l'année d'observation |
+| **Survie à un âge donné** | À âge constant, part de la génération encore en vie selon l'année d'observation |
 
 Chaque graphique porte une note **« Comment lire ce graphique »**. Les
 graphiques sont générés à la volée par Plotly (thème clair/sombre suivant

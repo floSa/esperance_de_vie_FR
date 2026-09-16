@@ -13,6 +13,9 @@ COLOR_HOMMES = "#0284c7"
 COLOR_HOMMES_ZONE = "rgba(2, 132, 199, 0.2)"
 COLOR_DECEDES = "rgba(248, 113, 113, 0.35)"
 COLOR_E0 = "#f97316"  # espérance de vie (tirets orange)
+# Zone « encore en vie » : neutre volontairement. La teindre selon le sexe
+# faisait croire à une seconde variable alors qu'il n'y en a qu'une.
+COLOR_VIVANTS_ZONE = "rgba(148, 163, 184, 0.22)"
 
 SEX_COLORS = {"femmes": COLOR_FEMMES, "hommes": COLOR_HOMMES}
 SEX_ZONES = {"femmes": COLOR_FEMMES_ZONE, "hommes": COLOR_HOMMES_ZONE}
@@ -69,6 +72,21 @@ def render_sidebar():
 def source_note():
     st.markdown("---")
     st.markdown(SOURCE_NOTE)
+
+
+def valeur_selectionnee(libelle: str, valeur: str):
+    """Rappel en gros caractères de ce que le curseur vient de sélectionner.
+
+    La valeur affichée par le curseur Streamlit est trop discrète pour servir
+    de repère de lecture sous le graphique.
+    """
+    st.markdown(
+        f"<div style='margin:.1rem 0 .4rem 0;'>"
+        f"<span style='font-size:.85rem;opacity:.7;'>{libelle}</span><br>"
+        f"<span style='font-size:2rem;font-weight:700;line-height:1.1;'>"
+        f"{valeur}</span></div>",
+        unsafe_allow_html=True,
+    )
 
 
 def note_lecture(lecture: str, source: str | None = None):

@@ -47,11 +47,17 @@ c4.metric(
 # ---------------------------------------------------------------------------
 
 INDICATEURS = {
-    "Espérance de vie à la naissance": (0, "Espérance de vie à la naissance (ans)"),
-    "Espérance de vie à 60 ans": (60, "Années restant à vivre à 60 ans"),
-    "Espérance de vie à 65 ans": (65, "Années restant à vivre à 65 ans"),
+    "À la naissance": (0, "Espérance de vie à la naissance (ans)"),
+    "À 1 an": (1, "Années restant à vivre à 1 an"),
+    "À 20 ans": (20, "Années restant à vivre à 20 ans"),
+    "À 40 ans": (40, "Années restant à vivre à 40 ans"),
+    "À 60 ans": (60, "Années restant à vivre à 60 ans"),
+    "À 65 ans": (65, "Années restant à vivre à 65 ans"),
 }
-choix = st.radio("Indicateur", list(INDICATEURS), horizontal=True, key="indicateur_page1")
+choix = st.radio(
+    "Espérance de vie mesurée…", list(INDICATEURS),
+    horizontal=True, key="indicateur_page1",
+)
 age, y_label = INDICATEURS[choix]
 serie = repo.serie_par_sexe(age)
 
@@ -103,14 +109,15 @@ if age == 0:
     )
 else:
     note_lecture(
-        f"Chaque point indique combien d'années il reste à vivre, en moyenne, à "
-        f"une personne qui a <strong>atteint {age} ans</strong> cette année-là. "
-        "Ces courbes montent plus lentement que l'espérance à la naissance : le "
-        "gros des progrès du XX<sup>e</sup> siècle a porté sur la mortalité "
-        "infantile, dont ces personnes ont déjà réchappé. Une hausse ici traduit "
-        "donc un vrai gain aux âges élevés.",
-        repo.millesime("esperance_vie_fr_insee") if age == 60
-        else repo.millesime("esperance_vie_fr_65_eurostat"),
+        f"L'axe vertical est le nombre d'années qu'il reste à vivre, en moyenne, "
+        f"à une personne <strong>déjà âgée de {age} ans</strong>. Ce n'est donc "
+        "pas un âge, mais une durée : lire un point à 28 signifie « encore 28 ans "
+        f"à vivre », soit un décès vers {age + 28} ans."
+        "<br><br>Cette durée ne concerne que les personnes ayant atteint "
+        f"{age} ans. Celles décédées avant n'entrent pas dans le calcul — c'est "
+        f"pourquoi {age} + cette durée dépasse l'espérance de vie à la naissance.",
+        repo.millesime("esperance_vie_fr_65_eurostat") if age == 65
+        else repo.millesime("esperance_vie_fr_insee"),
     )
 
 # ---------------------------------------------------------------------------

@@ -46,13 +46,13 @@ with col_a:
     )
 with col_b:
     st.page_link(
-        "pages/03_cohorte_explorer.py",
+        "pages/03_explorateur_cohorte.py",
         label="**Explorateur de cohorte** — qui est encore en vie ?",
         icon="👥",
     )
     st.page_link(
-        "pages/04_age_fixe_generations.py",
-        label="**Âge fixe × générations** — survie à un âge donné",
+        "pages/04_survie_age_donne.py",
+        label="**Survie à un âge donné** — comparaison entre générations",
         icon="🔄",
     )
 

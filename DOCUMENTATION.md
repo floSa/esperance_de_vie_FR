@@ -20,7 +20,7 @@ structurent les quatre pages :
 | Vue générale | Comment évolue l'espérance de vie et où se situe la France en Europe ? | e₀, e₆₀, e₆₅ |
 | Distribution & variance | Les âges au décès se sont-ils resserrés autour d'un âge élevé ? | Quartiles Q1–Q3, IQR, écart-type |
 | Explorateur de cohorte | Parmi les personnes nées une année donnée, combien sont encore en vie ? | Courbe de survie, effectifs |
-| Âge fixe × générations | À âge constant, la survie s'améliore-t-elle d'une génération à l'autre ? | % vivants à âge fixe |
+| Survie à un âge donné | À âge constant, la survie s'améliore-t-elle d'une génération à l'autre ? | % vivants à âge fixe |
 
 **Vocabulaire démographique manipulé** :
 
@@ -269,7 +269,7 @@ graphique »** qui explique les axes, le sens d'une variation et le piège
 | Vue générale | Courbes annuelles e₀/e₆₀/e₆₅ avec série longue depuis 1816 en fond (repères 1918, 1940, Covid) ; barres horizontales triées des 27 pays UE, France cerclée, moyenne UE-27 ; deux tops 10 |
 | Distribution & variance | Bande Q1–Q3 + médiane + e₀, avec repère visuel de la frontière estimé / mesuré ; aire d'évolution de l'IQR |
 | Explorateur de cohorte | Courbe de survie empilée (vivants / décédés cumulés) avec repère de l'âge courant |
-| Âge fixe × générations | Aire du % encore en vie à âge fixe selon l'année d'observation, flèche de progression |
+| Survie à un âge donné | Aire du % encore en vie à âge fixe selon l'année d'observation, flèche de progression |
 
 Le thème Plotly (`plotly_white` / `plotly_dark`) suit le thème Streamlit courant
 (`apply_layout`). Chaque page propose un export **CSV** (`download_csv`).
