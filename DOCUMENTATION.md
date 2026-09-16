@@ -13,11 +13,13 @@ chiffrés** et, surtout, les **limites de représentativité**.
 
 L'application ne prédit rien : elle **décrit et met en scène** l'évolution de la
 mortalité française et la compare au reste de l'Europe. Quatre questions
-structurent les quatre pages :
+structurent les six pages :
 
 | Page | Question posée | Indicateur central |
 |---|---|---|
-| Vue générale | Comment évolue l'espérance de vie et où se situe la France en Europe ? | Espérance de vie à tout âge de 0 à 95 ans |
+| Vue générale | Comment l'espérance de vie a-t-elle évolué chez les femmes et les hommes ? | e₀ par sexe, 1946–2025 |
+| Espérance de vie par âge | Combien d'années reste-t-il à vivre à un âge donné ? | Espérance résiduelle, 96 âges |
+| Comparaison européenne | Où se situe la France dans l'UE ? | e₀ des 27 États membres |
 | Distribution & variance | Les âges au décès se sont-ils resserrés autour d'un âge élevé ? | Quartiles Q1–Q3, IQR, écart-type |
 | Explorateur de cohorte | Parmi les personnes nées une année donnée, combien sont encore en vie ? | Courbe de survie, effectifs |
 | Survie à un âge donné | À âge constant, la survie s'améliore-t-elle d'une génération à l'autre ? | % vivants à âge fixe |
@@ -218,7 +220,7 @@ table de mortalité.
 | Profondeur avant 1946 | OWID, tous sexes confondus | Seule source ouverte continue ; le détail par sexe n'existe pas avant |
 | Survie au-delà de la dernière ancre | `None`, aucune extrapolation | L'extrapolation produisait des valeurs démographiquement impossibles |
 | Espérance résiduelle | Table **du moment** 2025 | Donnée disponible ; l'écran avertit qu'elle **sous-estime** la survie réelle |
-| Couleurs | Palette fixe par entité (femmes `#ec4899`, hommes `#0284c7`, e₀ `#f97316`) | Lecture cohérente entre les quatre pages ; jamais recyclée |
+| Couleurs | Palette fixe par entité (femmes `#ec4899`, hommes `#0284c7`, e₀ `#f97316`) | Lecture cohérente entre les six pages ; jamais recyclée |
 | Année courante | Dérivée de `date.today()` | Évite une péremption silencieuse au 1ᵉʳ janvier |
 
 > **Attention** — L'app affiche elle-même l'avertissement clé (page cohorte) :
@@ -266,7 +268,9 @@ graphique »** qui explique les axes, le sens d'une variation et le piège
 
 | Page | Graphiques |
 |---|---|
-| Vue générale | Courbes annuelles e₀/e₆₀/e₆₅ avec série longue depuis 1816 en fond (repères 1918, 1940, Covid) ; barres horizontales triées des 27 pays UE, France cerclée, moyenne UE-27 ; deux tops 10 |
+| Vue générale | Courbes e₀ femmes / hommes 1946–2025 ; série longue 1816–2023, sexes réunis, avec repères 1871, 1918, 1940 |
+| Espérance de vie par âge | Courbes femmes / hommes pour l'âge choisi au curseur (0 à 95 ans), axe des années fixé à 1998–2024 |
+| Comparaison européenne | Barres horizontales triées des 27 pays UE, France cerclée, moyenne UE-27 ; deux tops 10 |
 | Distribution & variance | Bande Q1–Q3 + médiane + e₀, avec repère visuel de la frontière estimé / mesuré ; aire d'évolution de l'IQR |
 | Explorateur de cohorte | Courbe de survie empilée (vivants / décédés cumulés) avec repère de l'âge courant |
 | Survie à un âge donné | Aire du % encore en vie à âge fixe selon l'année d'observation, flèche de progression |

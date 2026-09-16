@@ -86,14 +86,20 @@ flowchart LR
   common --> p1 & p2 & p3 & p4
 ```
 
-## Les quatre vues
+## Les six vues
 
-| Page | Contenu |
-|---|---|
-| **Vue générale** | Évolution annuelle de l'espérance de vie à l'âge choisi (curseur 0 → 95 ans), série longue depuis 1816 faisant apparaître 1918 et 1940, comparaison des 27 pays de l'UE |
-| **Distribution & variance** | Bande Q1–Q3 des âges au décès, médiane vs e₀, évolution de l'IQR : la **compression de la mortalité** |
-| **Explorateur de cohorte** | Pour une année de naissance et un sexe : courbe de survie, effectifs nés / vivants / décédés, âge de décès moyen attendu |
-| **Survie à un âge donné** | À âge constant, part de la génération encore en vie selon l'année d'observation |
+Une question par page, une source, une période. C'est la règle qui structure
+l'application : mélanger deux périmètres dans une même figure rendait les
+graphiques illisibles.
+
+| Page | Question | Source | Période |
+|---|---|---|---|
+| **Vue générale** | Comment l'espérance de vie a-t-elle évolué chez les femmes et les hommes ? | INSEE | 1946–2025 |
+| **Espérance de vie par âge** | Combien d'années reste-t-il à vivre à un âge donné ? | Eurostat | 1998–2024 |
+| **Comparaison européenne** | Où se situe la France dans l'UE ? | Eurostat | dernière année publiée |
+| **Distribution & variance** | À quel âge meurt-on, et cet âge s'est-il resserré ? | Eurostat + estimations | 1900–2024 |
+| **Explorateur de cohorte** | Parmi les personnes nées une année donnée, combien sont encore en vie ? | Estimations ±5 % | générations 1930–1990 |
+| **Survie à un âge donné** | À âge constant, la survie progresse-t-elle d'une génération à l'autre ? | Estimations ±5 % | générations 1930–1990 |
 
 Chaque graphique porte une note **« Comment lire ce graphique »**. Les
 graphiques sont générés à la volée par Plotly (thème clair/sombre suivant
@@ -107,7 +113,7 @@ Streamlit) ; chaque page propose un export CSV.
 | Quartiles des âges au décès | Calculés sur `dx` de la table de mortalité Eurostat | Densité directe des âges au décès, sans compte HMD |
 | Série longue avant 1946 | OWID, tous sexes confondus | Seule source ouverte continue ; le détail par sexe n'existe pas avant 1946 |
 | Survie de génération hors plage | Valeur de la dernière génération ayant atteint cet âge | Extrapoler produisait une survie qui remontait avec l'âge |
-| Couleurs | Palette fixe par entité (femmes rose, hommes bleu, e₀ orange) | Lecture cohérente entre les quatre pages |
+| Couleurs | Palette fixe par entité (femmes rose, hommes bleu, e₀ orange) | Lecture cohérente entre les six pages |
 
 ## Résultats clés
 
@@ -130,7 +136,7 @@ Streamlit) ; chaque page propose un export CSV.
 ```
 ├── app.py                        # point d'entrée Streamlit
 ├── common.py                     # palette, thème Plotly, survie de génération
-├── pages/                        # les quatre vues
+├── pages/                        # les six vues
 ├── data/
 │   ├── repository.py             # accès aux données générées
 │   ├── sources/                  # CSV + manifest.json (régénérés)
