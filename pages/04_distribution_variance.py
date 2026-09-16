@@ -9,6 +9,7 @@ from common import (
     SEX_ZONES,
     apply_layout,
     download_csv,
+    fr_num,
     note_lecture,
     persist,
     render_sidebar,
@@ -70,20 +71,58 @@ apply_layout(fig, height=520, legend=dict(orientation="h", yanchor="bottom", y=1
              title=f"Distribution des âges au décès — {SEX_LABELS[sexe]}")
 st.plotly_chart(fig, width='stretch')
 
-ecart_median_e0 = float(df["median"].iloc[-1] - df["e0"].iloc[-1])
+an_min, an_max = int(df["year"].iloc[0]), int(df["year"].iloc[-1])
+med_fin = float(df["median"].iloc[-1])
+e0_fin = float(df["e0"].iloc[-1])
+ecart_median_e0 = med_fin - e0_fin
+ecart_median_e0_debut = float(df["median"].iloc[0] - df["e0"].iloc[0])
+q1_fin, q3_fin = float(df["q1"].iloc[-1]), float(df["q3"].iloc[-1])
+
 note_lecture(
-    "La bande colorée contient la <strong>moitié centrale des décès</strong> : un "
-    "quart survient avant son bord inférieur, un quart après son bord supérieur. "
-    "Le trait plein est l'âge médian au décès, le tiret orange l'espérance de vie. "
-    "<br><br>Le point le plus contre-intuitif est que la médiane passe "
-    f"<strong>au-dessus</strong> de l'espérance de vie — {ecart_median_e0:.0f} ans "
-    "d'écart aujourd'hui. Les deux ne mesurent pas la même chose : l'espérance de "
-    "vie est une <em>moyenne</em>, tirée vers le bas par chaque décès précoce, "
-    "tandis que la médiane est l'âge qui coupe les décès en deux. En 1900, la "
-    "mortalité infantile massive écrasait la moyenne bien plus que la médiane. "
-    "<br><br>À gauche du trait pointillé, les valeurs sont des estimations "
-    "historiques ; à droite, elles sont calculées sur la distribution réelle des "
-    "décès publiée par Eurostat.",
+    "<strong>Axe horizontal</strong> : les années, "
+    f"de {an_min} à {an_max}."
+    "<br>"
+    "<strong>Axe vertical</strong> : un âge, en années."
+    "<br>"
+    "<strong>Trois éléments</strong> : une bande colorée, un trait plein, un "
+    "tiret orange."
+    "<br><br>"
+    "<strong>La bande</strong> contient la moitié des décès. Un quart a lieu "
+    "avant son bord bas, un quart après son bord haut."
+    f"<br>En {an_max} : de {q1_fin:.0f} à {q3_fin:.0f} ans."
+    "<br><br>"
+    "<strong>Le trait plein</strong> est l'âge médian au décès. La moitié des "
+    f"gens meurent avant, la moitié après. En {an_max} : {med_fin:.0f} ans."
+    "<br><br>"
+    "<strong>Le tiret orange</strong> est l'espérance de vie. En "
+    f"{an_max} : {fr_num(e0_fin)} ans."
+    "<br><br>"
+    "<strong>Regarde l'écart entre le trait plein et le tiret orange.</strong>"
+    "<br>"
+    f"En {an_min}, il était de {fr_num(ecart_median_e0_debut)} ans."
+    f"<br>En {an_max}, il n'est plus que de {fr_num(ecart_median_e0)} an"
+    f"{'s' if ecart_median_e0 >= 2 else ''}. Les deux se rejoignent."
+    "<br><br>"
+    "Les deux ne mesurent pas la même chose."
+    "<br>"
+    "L'espérance de vie est une moyenne. Chaque décès précoce la tire vers le "
+    "bas."
+    "<br>"
+    "La médiane coupe les décès en deux. Un bébé mort à un an y compte pour "
+    "une personne, pas pour 80 années perdues."
+    "<br><br>"
+    "En 1900, la mortalité infantile était massive : elle écrasait la moyenne "
+    "bien plus que la médiane, d'où le grand écart."
+    "<br>"
+    "Aujourd'hui, presque plus personne ne meurt jeune. Les deux mesures "
+    "convergent."
+    "<br><br>"
+    f"<strong>Le trait pointillé vertical, en {PREMIERE_ANNEE_MESUREE}</strong>, "
+    "sépare deux régimes."
+    "<br>"
+    "À gauche : des estimations historiques."
+    "<br>"
+    "À droite : des valeurs calculées sur les décès réels publiés par Eurostat.",
     f"{repo.millesime('distribution_deces_eurostat')} · estimations historiques "
     "avant " + str(PREMIERE_ANNEE_MESUREE),
 )
@@ -110,15 +149,30 @@ apply_layout(fig_iqr, height=320,
 st.plotly_chart(fig_iqr, width='stretch')
 
 note_lecture(
-    "Cette courbe est la <strong>hauteur de la bande précédente</strong>, année par "
-    "année : le nombre d'années qui sépare le premier du dernier quart des décès. "
-    "Plus elle descend, plus les décès se concentrent dans une tranche d'âge "
-    f"étroite. Elle passe de <strong>{iqr_debut:.0f} ans en {an_debut}</strong> à "
-    f"<strong>{iqr_fin:.0f} ans en {an_fin}</strong> chez les "
-    f"{SEX_LABELS[sexe].lower()}. <br><br>C'est ce qu'on appelle la "
-    "<strong>compression de la mortalité</strong> : en 1900, mourir à 5 ans ou à "
-    "75 ans était également banal ; aujourd'hui la mort est devenue un événement "
-    "de la vieillesse, prévisible à une dizaine d'années près.",
+    "<strong>Axe horizontal</strong> : les années, "
+    f"de {an_debut} à {an_fin}."
+    "<br>"
+    "<strong>Axe vertical</strong> : un nombre d'années."
+    "<br>"
+    "<strong>Une seule courbe</strong> : la hauteur de la bande du graphique "
+    "précédent."
+    "<br><br>"
+    "Cette hauteur est la largeur de la fenêtre d'âge où se concentre la "
+    "moitié des décès."
+    "<br>"
+    "Quand la courbe descend, cette fenêtre se resserre. On meurt dans une "
+    "tranche d'âge de plus en plus étroite."
+    "<br><br>"
+    f"Chez les {SEX_LABELS[sexe].lower()}, elle passe de "
+    f"<strong>{iqr_debut:.0f} ans en {an_debut}</strong> à "
+    f"<strong>{iqr_fin:.0f} ans en {an_fin}</strong>."
+    "<br><br>"
+    "<strong>C'est la compression de la mortalité.</strong>"
+    "<br>"
+    "En 1900, mourir à 5 ans ou à 75 ans était également banal."
+    "<br>"
+    "Aujourd'hui, la mort est un événement de la vieillesse, prévisible à une "
+    "dizaine d'années près.",
     repo.millesime("distribution_deces_eurostat"),
 )
 
