@@ -23,10 +23,12 @@ render_sidebar()
 st.title("📐 Distribution des âges au décès — Compression de la mortalité")
 
 persist("sexe", "femmes")
-sexe = st.radio(
-    "Sexe", ["femmes", "hommes"], format_func=lambda s: SEX_LABELS[s],
-    horizontal=True, key="sexe",
-)
+col_sexe, _ = st.columns([1, 3])
+with col_sexe:
+    sexe = st.selectbox(
+        "Sexe", ["femmes", "hommes"],
+        format_func=lambda s: SEX_LABELS[s], key="sexe",
+    )
 
 toutes = repo.distribution_deces()
 df = toutes[toutes["sexe"] == sexe].reset_index(drop=True)

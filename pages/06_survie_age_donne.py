@@ -38,9 +38,9 @@ persist("age_fixe", 70)
 
 col_sexe, col_age = st.columns([1, 3])
 with col_sexe:
-    sexe = st.radio(
-        "Sexe", ["femmes", "hommes"], format_func=lambda s: SEX_LABELS[s],
-        horizontal=True, key="sexe",
+    sexe = st.selectbox(
+        "Sexe", ["femmes", "hommes"],
+        format_func=lambda s: SEX_LABELS[s], key="sexe",
     )
 with col_age:
     age = st.select_slider(
