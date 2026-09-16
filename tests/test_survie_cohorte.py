@@ -7,7 +7,7 @@ utile quand on retouche l'interpolation.
 
 import pytest
 
-from common import get_cohort_survival, interp_survival
+from common import age_max_documente, get_cohort_survival, interp_survival
 from data.embedded import COHORT_SURVIVAL
 
 SEXES = ["femmes", "hommes"]
@@ -71,6 +71,22 @@ def test_pas_extrapolation_au_dela_des_donnees(sexe):
     """Aucune génération ne se voit attribuer une survie à un âge non atteint."""
     age_max_connu = max(ancres[-1][0] for ancres in COHORT_SURVIVAL[sexe].values())
     assert get_cohort_survival(sexe, 1960, age_max_connu + 5) is None
+
+
+@pytest.mark.parametrize("sexe", SEXES)
+def test_age_max_documente_donne_toujours_une_valeur(sexe):
+    """Borne exploitable par les pages, pour toutes les générations du curseur.
+
+    La génération 1930 a dépassé 95 ans : demander sa survie à son âge réel
+    renvoyait `None`, et l'explorateur de cohorte plantait sur une
+    multiplication par `None`.
+    """
+    borne = age_max_documente(sexe)
+    for annee in range(1930, 1991):
+        assert get_cohort_survival(sexe, annee, borne) is not None, (
+            f"{sexe} nés en {annee} : aucune valeur à {borne} ans"
+        )
+    assert get_cohort_survival(sexe, 1930, borne + 1) is None
 
 
 @pytest.mark.parametrize("sexe", SEXES)

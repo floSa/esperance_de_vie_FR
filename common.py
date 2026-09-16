@@ -164,6 +164,16 @@ def interp_survival(cohort_data: list[tuple], age: float) -> float | None:
     return float(pcts[-1])
 
 
+def age_max_documente(sex: str) -> int:
+    """Âge le plus élevé pour lequel une survie est connue, tous sexes d'ancres.
+
+    Les générations les plus anciennes ont aujourd'hui dépassé cet âge : les
+    pages doivent borner leur affichage plutôt que de demander une valeur qui
+    n'existe pas.
+    """
+    return max(ancres[-1][0] for ancres in COHORT_SURVIVAL[sex].values())
+
+
 def get_cohort_survival(sex: str, birth_year: int, age: float) -> float | None:
     """% d'une génération encore en vie à un âge donné.
 

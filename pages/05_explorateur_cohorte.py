@@ -8,6 +8,7 @@ from common import (
     CURRENT_YEAR,
     SEX_COLORS,
     SEX_LABELS,
+    age_max_documente,
     apply_layout,
     download_csv,
     fr_num,
@@ -42,13 +43,17 @@ with col_annee:
     annee_naissance = st.slider("Année de naissance", 1930, 1990, key="annee_naissance")
 
 age_actuel = CURRENT_YEAR - annee_naissance
+# Les générations les plus anciennes ont dépassé le dernier âge documenté :
+# on s'arrête à ce que les données disent, plutôt que d'extrapoler.
+age_donnees = min(age_actuel, age_max_documente(sexe))
+donnees_tronquees = age_donnees < age_actuel
 
 # ---------------------------------------------------------------------------
 # 2. Métriques
 # ---------------------------------------------------------------------------
 
 naissances = repo.naissances()[annee_naissance] * SEX_RATIO[sexe]
-pct_vivants = get_cohort_survival(sexe, annee_naissance, age_actuel)
+pct_vivants = get_cohort_survival(sexe, annee_naissance, age_donnees)
 vivants = naissances * pct_vivants / 100
 decedes = naissances - vivants
 residuelle = interp_survival(
@@ -67,9 +72,9 @@ c2.metric(
     help="Naissances vivantes France métropolitaine (INSEE), "
          "réparties selon la proportion de filles et de garçons à la naissance",
 )
-c3.metric("Encore en vie estimés", f"{fr_num(vivants, 0)}",
+c3.metric(f"Encore en vie à {age_donnees} ans", f"{fr_num(vivants, 0)}",
           delta=f"{fr_num(pct_vivants)} %")
-c4.metric("Décédés estimés", f"{fr_num(decedes, 0)}",
+c4.metric(f"Décédés avant {age_donnees} ans", f"{fr_num(decedes, 0)}",
           delta=f"-{fr_num(100 - pct_vivants)} %", delta_color="inverse")
 c5.metric(
     "Décès moyen attendu vers",
@@ -78,6 +83,13 @@ c5.metric(
     delta_color="off",
     help="Pour les survivants uniquement, selon la table du moment 2025",
 )
+
+if donnees_tronquees:
+    st.caption(
+        f"Cette génération a **{age_actuel} ans** aujourd'hui, mais les tables "
+        f"de survie s'arrêtent à **{age_donnees} ans**. Les effectifs ci-dessus "
+        f"sont donc ceux de {age_donnees} ans, dernier âge documenté."
+    )
 
 # ---------------------------------------------------------------------------
 # 3. Courbe de survie
@@ -95,7 +107,7 @@ def build_survival_curve(sexe: str, annee_naissance: int, age_max: int) -> pd.Da
     })
 
 
-curve = build_survival_curve(sexe, annee_naissance, age_actuel)
+curve = build_survival_curve(sexe, annee_naissance, age_donnees)
 
 fig = go.Figure()
 fig.add_trace(go.Scatter(
@@ -114,26 +126,26 @@ fig.add_trace(go.Scatter(
     hovertemplate="Âge %{x} : %{customdata:.1f} % en vie<extra></extra>",
 ))
 fig.add_vline(
-    x=age_actuel,
+    x=age_donnees,
     line_dash="dash",
     line_color=SEX_COLORS[sexe],
-    annotation_text=f"Âge en {CURRENT_YEAR} : {age_actuel} ans",
+    annotation_text=f"{age_donnees} ans",
     annotation_position="top left",
 )
 fig.update_yaxes(range=[0, 100], title="% de la cohorte")
-fig.update_xaxes(range=[0, age_actuel], title="Âge")
+fig.update_xaxes(range=[0, age_donnees], title="Âge")
 apply_layout(
     fig, height=500,
     legend=dict(orientation="h", yanchor="bottom", y=1.05, x=0),
     title=f"Cohorte {SEX_LABELS[sexe].lower()} née en {annee_naissance} — "
-          f"{fr_num(pct_vivants)} % encore en vie à {age_actuel} ans",
+          f"{fr_num(pct_vivants)} % encore en vie à {age_donnees} ans",
 )
 st.plotly_chart(fig, width='stretch')
 
 note_lecture(
     f"L'axe horizontal suit la génération née en <strong>{annee_naissance}</strong> "
-    f"tout au long de sa vie, de 0 an jusqu'à son âge actuel "
-    f"({age_actuel} ans). La zone colorée du haut est la part encore en vie, la "
+    f"tout au long de sa vie, de 0 an jusqu'à <strong>{age_donnees} ans</strong>. "
+    "La zone grise du haut est la part encore en vie, la "
     "zone rouge du bas la part déjà décédée — les deux font toujours 100 %. "
     "<br><br>La pente raide tout à gauche est la <strong>mortalité "
     "infantile</strong> : une part notable des décès d'une génération survient "
