@@ -1,45 +1,17 @@
 # Espérance de vie — France & Europe
 
-**Application Streamlit multi-pages qui analyse l'espérance de vie en France (1900–2025) et la compare au reste de l'Europe, à partir des tables de mortalité HMD, INSEE et Eurostat.**
+**Application Streamlit multi-pages qui analyse l'espérance de vie en France (1816–2025) et la compare au reste de l'Europe, à partir des séries publiques de l'INSEE, d'Eurostat et d'Our World in Data.**
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![uv](https://img.shields.io/badge/uv-package_manager-DE5FE9?logo=uv&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.60-FF4B4B?logo=streamlit&logoColor=white)
 ![Plotly](https://img.shields.io/badge/Plotly-6.9-3F4F75?logo=plotly&logoColor=white)
+![Licence](https://img.shields.io/badge/licence-MIT-green)
 
-Construite à partir des tables de mortalité **HMD** (Human Mortality Database,
-mortality.org), de l'**INSEE** (Vallin & Meslé) et d'**Eurostat** (table
-`demo_mlexpec`). Une partie des données est **embarquée** (approximations
-démographiques validées), une partie peut être **rafraîchie via API** (Eurostat
-sans authentification, HMD avec credentials).
+Toutes les données sont **récupérées par API publique** et régénérables par une
+commande. Aucun compte, aucune clé, aucun fichier à importer à la main.
 
-> Méthodes de calcul, formules, hypothèses et limites de représentativité :
-> **[DOCUMENTATION.md](DOCUMENTATION.md)**.
-
-## Architecture
-
-Application **Streamlit** à quatre pages, alimentée par des données embarquées
-(repli hors-ligne) et, en option, par les API HMD et Eurostat.
-
-```mermaid
-flowchart LR
-  subgraph Données
-    emb[embedded.py / european.py<br/>approx. HMD · INSEE · Eurostat 2024]
-    load[loader.py<br/>API HMD + API Eurostat]
-  end
-  subgraph Noyau
-    common[common.py<br/>interpolation cohortes · palette · thème]
-  end
-  subgraph Pages
-    p1[Vue générale]
-    p2[Distribution & variance]
-    p3[Explorateur de cohorte]
-    p4[Âge fixe × générations]
-  end
-  emb --> common
-  load -.rafraîchissement optionnel.-> common
-  common --> p1 & p2 & p3 & p4
-```
+> Méthodes de calcul, formules, hypothèses et limites : **[DOCUMENTATION.md](DOCUMENTATION.md)**.
 
 ## Lancement
 
@@ -50,89 +22,153 @@ uv sync
 uv run streamlit run app.py
 ```
 
+## Mettre à jour les données
+
+Une seule commande interroge l'INSEE, Eurostat et Our World in Data, puis
+réécrit `data/sources/` :
+
+```bash
+uv run python -m scripts.refresh_data
+```
+
+Chaque jeu produit un CSV **et** une entrée dans `data/sources/manifest.json`
+consignant l'URL exacte, les paramètres de requête, le millésime déclaré par le
+fournisseur et la date d'extraction. Le diff Git de ces fichiers est la trace de
+ce qui a bougé d'un rafraîchissement à l'autre.
+
+## D'où viennent les données
+
+| Jeu | Source | Accès | Couverture |
+|---|---|---|---|
+| Espérance de vie par sexe (âges 0, 1, 20, 40, 60) | INSEE — API Melodi, `DS_DECES_MORTALITE_SERIES` (`EC_MEASURE=LEXPEC`) | Ouvert, sans jeton | 1946–2025 |
+| Espérance de vie à 65 ans | Eurostat — `demo_mlexpec` | Ouvert | 1998–2024 |
+| Espérance de vie, série longue (tous sexes) | Our World in Data — `grapher/life-expectancy`, d'après HMD | Ouvert (CC BY) | 1816–2023 |
+| Naissances vivantes annuelles | INSEE — `DS_NAISSANCES_FECONDITE_SERIES` (`LVB_PLACE_REG`) | Ouvert | 1901–2025 |
+| Distribution des âges au décès (`dx` → quartiles) | Eurostat — `demo_mlifetable` | Ouvert | 2014–2024 |
+| Comparaison européenne | Eurostat — `demo_mlexpec` | Ouvert | dernière année publiée |
+
+Le périmètre géographique retenu est la **France métropolitaine**, constant sur
+toute la profondeur historique — « France entière » intègre les DOM à partir de
+1990 et créerait une rupture de série.
+
+### Ce qui reste estimé
+
+La **survie par génération** (pages « Explorateur de cohorte » et « Âge fixe ×
+générations ») n'a aucune source ouverte : aucune institution ne publie de
+tables de mortalité par cohorte pour la France. Ces valeurs restent des
+approximations dans `data/embedded.py`, précision estimée à **±5 %**. Il en va
+de même des quartiles des âges au décès **avant 2014**, Eurostat ne remontant
+pas plus loin ; la page concernée marque explicitement la frontière entre
+estimé et mesuré.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Sources["APIs publiques"]
+    insee[INSEE Melodi]
+    euro[Eurostat]
+    owid[Our World in Data]
+  end
+  refresh[scripts/refresh_data.py]
+  csv[(data/sources/<br/>CSV + manifest.json)]
+  repo[data/repository.py]
+  emb[data/embedded.py<br/>survie par génération]
+  common[common.py<br/>interpolation · palette · thème]
+  subgraph Pages
+    p1[Vue générale]
+    p2[Distribution & variance]
+    p3[Explorateur de cohorte]
+    p4[Âge fixe × générations]
+  end
+  insee & euro & owid --> refresh --> csv --> repo --> common
+  emb --> common
+  common --> p1 & p2 & p3 & p4
+```
+
 ## Les quatre vues
 
 | Page | Contenu |
 |---|---|
-| **Vue générale** | Évolution de e₀ / e₆₀ / e₆₅ (1900–2025), annotations WWI/WWII/Covid, comparaison des 26 pays UE (barres triées, moyenne UE-27), tops 10 |
-| **Distribution & variance** | Bande Q1–Q3 des âges au décès, médiane vs e₀, évolution de l'IQR (67 ans → 13 ans) : la **compression de la mortalité** |
-| **Explorateur de cohorte** | Pour une année de naissance (1930–1990) et un sexe : courbe de survie interpolée, effectifs nés / vivants / décédés, espérance résiduelle 2025 |
-| **Âge fixe × générations** | À âge constant (35–90 ans), % de la génération encore en vie selon l'année d'observation — comparaison entre cohortes |
+| **Vue générale** | Évolution annuelle de e₀ / e₆₀ / e₆₅, série longue depuis 1816 faisant apparaître 1918 et 1940, comparaison des 27 pays de l'UE |
+| **Distribution & variance** | Bande Q1–Q3 des âges au décès, médiane vs e₀, évolution de l'IQR : la **compression de la mortalité** |
+| **Explorateur de cohorte** | Pour une année de naissance et un sexe : courbe de survie, effectifs nés / vivants / décédés, âge de décès moyen attendu |
+| **Âge fixe × générations** | À âge constant, part de la génération encore en vie selon l'année d'observation |
 
-> Les graphiques sont **générés à la volée** par Plotly (thème clair/sombre suivant
-> Streamlit) ; aucune image statique n'est stockée dans le dépôt. Chaque page
-> propose un export **CSV** des données affichées.
+Chaque graphique porte une note **« Comment lire ce graphique »**. Les
+graphiques sont générés à la volée par Plotly (thème clair/sombre suivant
+Streamlit) ; chaque page propose un export CSV.
 
 ## Choix techniques
 
 | Cas | Choix retenu | Pourquoi |
 |---|---|---|
-| Données par défaut | Embarquées (`data/embedded.py`) | App utilisable **hors-ligne**, sans compte HMD ; API en option |
-| Survie de cohorte | Interpolation linéaire d'ancres arrondies | Compacité, pas de credentials ; précision suffisante (**±5 %**) |
-| Espérance résiduelle | Table **du moment** 2025 (INSEE/DREES) | Donnée disponible ; l'app avertit qu'elle **sous-estime** la survie réelle des générations |
-| Quartiles HMD | Calculés sur la distribution des décès `dx` | Densité directe des âges au décès (médiane, IQR, écart-type) |
+| Provenance des données | Un CSV + une entrée de manifeste par jeu | Rendre le rafraîchissement vérifiable et le diff Git relisible |
+| Quartiles des âges au décès | Calculés sur `dx` de la table de mortalité Eurostat | Densité directe des âges au décès, sans compte HMD |
+| Série longue avant 1946 | OWID, tous sexes confondus | Seule source ouverte continue ; le détail par sexe n'existe pas avant 1946 |
+| Survie de génération hors plage | Valeur de la dernière génération ayant atteint cet âge | Extrapoler produisait une survie qui remontait avec l'âge |
 | Couleurs | Palette fixe par entité (femmes rose, hommes bleu, e₀ orange) | Lecture cohérente entre les quatre pages |
-
-> Détail des formules et du patron décisionnel : [DOCUMENTATION.md](DOCUMENTATION.md).
 
 ## Résultats clés
 
 | Indicateur | Femmes | Hommes |
 |---|---|---|
-| e₀ en 1900 → 2025 | **48,2 → 85,9 ans** (+37,7) | **43,4 → 80,3 ans** (+36,9) |
-| IQR des âges au décès 1900 → 2025 | **67 → 13 ans** | **65 → 17 ans** |
+| e₀ en 2025 | **85,9 ans** | **80,4 ans** |
+| IQR des âges au décès (2024, mesuré) | **12 ans** (78 → 90) | **17 ans** (71 → 88) |
 
-- **Écart femmes − hommes** (e₀ 2025) : **5,6 ans**.
-- **Compression de la mortalité** : les décès, autrefois étalés sur toute la vie,
-  se concentrent aujourd'hui au-delà de **70 ans** (IQR féminin divisé par ~5).
-- **Europe (Eurostat 2024, 26 pays)** : France **83,0 ans** au total, au-dessus de
-  la moyenne **UE-27 (81,5 ans)** ; en tête Espagne et Suède (**83,7 ans**).
+- **Écart femmes − hommes** (e₀ 2025) : **5,5 ans**.
+- **Creux de 1918** : l'espérance de vie tombe à **34,8 ans** (contre 43,0 en
+  1917) sous l'effet conjugué de la guerre et de la grippe espagnole.
+- **Compression de la mortalité** : les décès, autrefois étalés sur toute la
+  vie, se concentrent aujourd'hui dans une fenêtre étroite — douze ans pour les
+  femmes, dix-sept pour les hommes.
+- **Europe (Eurostat 2024)** : France **83,0 ans**, au-dessus de la moyenne
+  **UE-27 (81,5 ans)** ; en tête l'Espagne (**84,0 ans**) puis la Suède (83,8).
 
 ## Structure
 
 ```
 ├── app.py                        # point d'entrée Streamlit
-├── common.py                     # palette, template Plotly, interpolation cohortes
-├── pages/
-│   ├── 01_vue_generale.py
-│   ├── 02_distribution_variance.py
-│   ├── 03_cohorte_explorer.py
-│   └── 04_age_fixe_generations.py
-└── data/
-    ├── loader.py                 # téléchargement HMD + API Eurostat
-    ├── embedded.py               # données approx. (quartiles, cohortes, naissances)
-    └── european.py               # comparaison européenne Eurostat 2024
+├── common.py                     # palette, thème Plotly, survie de génération
+├── pages/                        # les quatre vues
+├── data/
+│   ├── repository.py             # accès aux données générées
+│   ├── sources/                  # CSV + manifest.json (régénérés)
+│   ├── embedded.py               # estimations sans source ouverte
+│   └── european.py               # nomenclature des pays UE-27
+├── scripts/
+│   ├── sources.py                # un fetcher par source, avec provenance
+│   ├── refresh_data.py           # régénère data/sources/
+│   └── check_pages.py            # rend les 5 pages et détecte les erreurs
+└── tests/                        # invariants démographiques
 ```
 
-## Données HMD complètes (optionnel)
-
-L'inscription gratuite sur [mortality.org](https://www.mortality.org) permet de
-recalculer les vrais quartiles et l'écart-type depuis les tables 1x1 :
+## Qualité
 
 ```bash
-export HMD_USER="votre@email.com"
-export HMD_PASSWORD="motdepasse"
-uv run streamlit run app.py
+uv run ruff check .                     # lint
+uv run pytest -q                        # invariants démographiques
+uv run python scripts/check_pages.py    # rendu des 5 pages
 ```
 
-ou en important directement `fltper_1x1.txt` / `mltper_1x1.txt` sur la page
-**Distribution & variance**.
-
-## Lint
-
-```bash
-uv run ruff check .
-```
+Les tests vérifient des propriétés qui doivent tenir quelles que soient les
+valeurs : la survie décroît avec l'âge, elle ne régresse pas d'une génération à
+la suivante, elle reste dans [0, 100], et aucune génération ne se voit attribuer
+de survie à un âge qu'elle n'a pas atteint.
 
 ## Sources
 
-- HMD — Human Mortality Database, [mortality.org](https://www.mortality.org)
-- INSEE — tables de mortalité françaises (Vallin & Meslé), naissances France métropolitaine
-- Eurostat — table `demo_mlexpec` (2024)
-- DREES 2024 — espérance de vie résiduelle
+- INSEE — [API Melodi](https://api.insee.fr/melodi/), séries longues décès et naissances
+- Eurostat — [`demo_mlexpec`](https://ec.europa.eu/eurostat/databrowser/view/demo_mlexpec), [`demo_mlifetable`](https://ec.europa.eu/eurostat/databrowser/view/demo_mlifetable)
+- Our World in Data — [life expectancy](https://ourworldindata.org/life-expectancy), d'après la Human Mortality Database
 - Wilmoth & Horiuchi (1999), Robine (2001) — compression de la mortalité
 
-## Licences & composants
+## Licences
+
+Code sous **MIT** — voir [LICENSE](LICENSE). Les **données** relèvent des
+conditions de leurs producteurs (Licence Ouverte Etalab pour l'INSEE,
+réutilisation Eurostat, CC BY pour OWID) ; le détail figure dans `LICENSE` et la
+provenance exacte dans `data/sources/manifest.json`.
 
 | Composant | Rôle | Licence |
 |---|---|---|
@@ -140,11 +176,5 @@ uv run ruff check .
 | Plotly | Graphiques interactifs | MIT |
 | pandas | Manipulation de tableaux | BSD-3-Clause |
 | numpy | Calcul numérique (quartiles, variance) | BSD-3-Clause |
-| requests | Appels API HMD / Eurostat | Apache-2.0 |
-| ruff | Lint (groupe `dev`) | MIT |
-| **Ce projet** | Code applicatif | MIT — Copyright (c) 2026 floSa |
-
-Données : HMD (mortality.org), Eurostat, INSEE et DREES — se reporter aux
-conditions de chaque fournisseur pour toute réutilisation.
-
-*Estimations approximatives : survie de cohorte estimée à ±5 %.*
+| requests | Appels aux API | Apache-2.0 |
+| ruff · pytest | Lint et tests (groupe `dev`) | MIT |

@@ -1,9 +1,9 @@
 # Documentation technique — Espérance de vie · France & Europe
 
 Documentation méthodologique de l'application Streamlit d'analyse de l'espérance
-de vie. Elle détaille le **problème étudié**, les **données**, les **méthodes de
-calcul** (avec formules), les **hypothèses**, les **résultats chiffrés** et,
-surtout, les **limites de représentativité** des estimations affichées.
+de vie. Elle détaille le **problème étudié**, les **données** et leur provenance,
+les **méthodes de calcul** (avec formules), les **hypothèses**, les **résultats
+chiffrés** et, surtout, les **limites de représentativité**.
 
 > Vue d'ensemble et démarrage : [README.md](README.md).
 
@@ -12,8 +12,8 @@ surtout, les **limites de représentativité** des estimations affichées.
 ## 1. Problème étudié
 
 L'application ne prédit rien : elle **décrit et met en scène** l'évolution de la
-mortalité française sur **1900–2025** et la compare au reste de l'Europe. Quatre
-questions structurent les quatre pages :
+mortalité française et la compare au reste de l'Europe. Quatre questions
+structurent les quatre pages :
 
 | Page | Question posée | Indicateur central |
 |---|---|---|
@@ -30,57 +30,96 @@ questions structurent les quatre pages :
 | `e₆₀`, `e₆₅` | Espérance de vie **résiduelle** à 60 / 65 ans |
 | Table **du moment** (période) | Mortalité observée une année donnée, appliquée à tous les âges — une génération *fictive* |
 | Table de **génération** (cohorte) | Mortalité réellement subie par les personnes nées la même année |
-| `dx` | Distribution des décès par âge dans une table de mortalité (colonne HMD) |
+| `dx` | Nombre de décès par âge dans une table de mortalité — la densité des âges au décès |
 | IQR | Écart interquartile `Q3 − Q1` : fenêtre d'âge contenant **50 %** des décès |
 
 **Difficulté spécifique** : distinguer la logique **période** de la logique
-**génération**. Une table du moment (ex. 2025) mesure les conditions de mortalité
-d'une année ; elle ne décrit **aucune personne réelle** de bout en bout. Une table
-de génération suit une cohorte, mais reste incomplète tant que la cohorte n'est pas
+**génération**. Une table du moment mesure les conditions de mortalité d'une
+année ; elle ne décrit **aucune personne réelle** de bout en bout. Une table de
+génération suit une cohorte, mais reste incomplète tant que la cohorte n'est pas
 éteinte. L'app manipule les deux et l'affiche explicitement.
 
 ---
 
 ## 2. Données & provenance
 
-| Source | Contenu utilisé | Accès |
+Toutes les données téléchargeables sont **régénérées par script**, jamais saisies
+à la main :
+
+```bash
+uv run python -m scripts.refresh_data
+```
+
+### 2.1 Les six jeux de données
+
+| Jeu (`data/sources/`) | Source | Jeu de données | Couverture |
+|---|---|---|---|
+| `esperance_vie_fr_insee.csv` | INSEE, API Melodi | `DS_DECES_MORTALITE_SERIES`, `EC_MEASURE=LEXPEC` | 1946–2025, sexes F/M, âges 0·1·20·40·60 |
+| `esperance_vie_fr_65_eurostat.csv` | Eurostat | `demo_mlexpec`, `age=Y65` | 1998–2024, sexes F/M |
+| `esperance_vie_fr_longue_owid.csv` | Our World in Data (relais HMD) | `grapher/life-expectancy` | 1816–2023, tous sexes |
+| `naissances_fr_insee.csv` | INSEE, API Melodi | `DS_NAISSANCES_FECONDITE_SERIES`, `LVB_PLACE_REG` | 1901–2025 |
+| `distribution_deces_eurostat.csv` | Eurostat | `demo_mlifetable`, `indic_de=NUMBERDYING` (`dx`) | 2014–2024, sexes F/M |
+| `esperance_vie_europe_eurostat.csv` | Eurostat | `demo_mlexpec`, `age=Y_LT1` | dernière année publiée, 41 territoires |
+
+Aucune de ces sources ne demande de compte ni de clé d'API.
+
+### 2.2 Le manifeste de provenance
+
+Chaque rafraîchissement réécrit `data/sources/manifest.json`. Pour chaque jeu :
+
+```json
+{
+  "fichier": "esperance_vie_fr_insee.csv",
+  "fournisseur": "INSEE",
+  "jeu": "DS_DECES_MORTALITE_SERIES (EC_MEASURE=LEXPEC)",
+  "url": "https://api.insee.fr/melodi/data/DS_DECES_MORTALITE_SERIES",
+  "parametres": { "FREQ": "A", "EC_MEASURE": "LEXPEC", "GEO": "2025-FRANCE-FM" },
+  "annees": "1946–2025",
+  "lignes": 800,
+  "extrait_le": "2026-09-16T08:45:07+00:00"
+}
+```
+
+Les jeux Eurostat portent en plus `millesime_source`, la date de mise à jour que
+le fournisseur déclare lui-même. C'est ce champ qui permet de savoir si une
+absence de données est un bug ou une non-publication.
+
+> **Décision** — *CSV + manifeste versionnés* **plutôt que** téléchargement au
+> démarrage de l'app, **parce que** l'app doit se lancer hors-ligne et que le
+> diff Git des CSV rend visible ce qui a changé entre deux millésimes.
+> **Limite** : les données ne sont à jour que du dernier `refresh_data`.
+
+### 2.3 Périmètre géographique
+
+Le périmètre retenu côté INSEE est **France métropolitaine**
+(`GEO=2025-FRANCE-FM`), constant sur toute la profondeur historique. « France
+entière » intègre les DOM à partir de 1990 et introduirait une rupture de série
+au milieu de la période étudiée.
+
+Pour les naissances, la mesure retenue est le **lieu d'enregistrement**
+(`LVB_PLACE_REG`, 1901–2025) et non le lieu de résidence (`LVB_PLACE_RES`), qui
+ne commence qu'en 1975 — les mélanger créerait une discontinuité en plein milieu
+des cohortes étudiées.
+
+### 2.4 Ce qui reste estimé (`data/embedded.py`)
+
+| Constante | Forme | Pourquoi pas de source ouverte |
 |---|---|---|
-| **HMD** — Human Mortality Database ([mortality.org](https://www.mortality.org)) | Tables de mortalité période France 1x1 (`fltper_1x1.txt`, `mltper_1x1.txt`), colonnes `Year, Age, mx, qx, lx, dx, ex` | API avec credentials `HMD_USER` / `HMD_PASSWORD`, **ou** upload manuel |
-| **INSEE** (Vallin & Meslé) | Séries longues e₀ / e₆₀ / e₆₅, tables de génération, naissances France métropolitaine | Embarqué (approximations) |
-| **Eurostat** — table `demo_mlexpec` | e₀ par pays et sexe, 26 pays UE + moyenne UE-27, année 2024 | API publique **sans authentification** |
-| **DREES 2024** | Espérance de vie résiduelle du moment 2025 | Embarqué (approximations) |
+| `COHORT_SURVIVAL` | `{sexe: {année_naissance: [(âge, % vivants), …]}}`, 1930→1990 | Aucune institution ne publie de tables de mortalité **par génération** pour la France |
+| `PERIOD_DISTRIBUTION_FEMMES` / `_HOMMES` | `{year, e0, q1, median, q3, iqr}`, 1900→2010 | Eurostat ne remonte pas avant 2014 |
+| `RESIDUAL_LIFE_2025` | `{sexe: {âge: années restantes}}` | L'INSEE ne publie que les âges 0, 1, 20, 40 et 60 |
+| `SEX_RATIO` | `femmes 0,487 · hommes 0,513` | Constante démographique |
 
-### 2.1 Deux régimes de données
-
-- **Embarqué** (`data/embedded.py`, `data/european.py`) : approximations validées,
-  servant de **repli** quand les credentials HMD sont absents. Toujours sourcées
-  dans l'interface. Précision annoncée : **survie de cohorte à ±5 %**.
-- **Rafraîchi via API** (`data/loader.py`) : tables HMD complètes (recalcul des
-  vrais quartiles/écart-type) et comparaison Eurostat pour une année choisie.
-
-> **Décision** — *Données embarquées comme socle par défaut* **plutôt que**
-> dépendance systématique aux API, **parce que** HMD exige une inscription et des
-> credentials : l'app doit rester utilisable hors-ligne et sans compte. **Limite** :
-> les valeurs par défaut sont des approximations arrondies, pas les tables brutes.
-
-### 2.2 Structures embarquées (`data/embedded.py`)
-
-| Constante | Forme | Rôle |
-|---|---|---|
-| `PERIOD_DISTRIBUTION_FEMMES` / `_HOMMES` | liste `{year, e0, q1, median, q3, iqr}`, 1900→2025 par décennie | Distribution des âges au décès (période) |
-| `E60_SERIES`, `E65_SERIES` | `{sexe: {année: valeur}}` | Espérance résiduelle à 60 / 65 ans |
-| `COHORT_SURVIVAL` | `{sexe: {année_naissance: [(âge, % vivants), …]}}`, 1930→1990 | Ancres de survie par génération |
-| `BIRTHS_BY_YEAR` | `{année: effectif}`, 1930→1990 | Naissances France métropolitaine |
-| `SEX_RATIO` | `femmes 0,487 · hommes 0,513` | Répartition des naissances par sexe |
-| `RESIDUAL_LIFE_2025` | `{sexe: {âge: années restantes}}` | Espérance résiduelle, table du moment 2025 |
+Précision annoncée : **±5 %** sur la survie par génération.
 
 ---
 
 ## 3. Méthodes de calcul
 
-### 3.1 Distribution des âges au décès (depuis `dx`) — `compute_percentiles_from_hmd`
+### 3.1 Quartiles des âges au décès, depuis `dx`
 
-Pour chaque année, à partir de la distribution des décès `dx` par âge :
+Pour chaque année, à partir du nombre de décès `dx` par âge de la table de
+mortalité :
 
 - Poids normalisés : $w_x = \dfrac{d_x}{\sum_x d_x}$ (avec $d_x$ borné à $\geq 0$).
 - Âge moyen au décès : $\bar{a} = \sum_x w_x \, x$.
@@ -91,49 +130,82 @@ Pour chaque année, à partir de la distribution des décès `dx` par âge :
   $Q_p = \min\{a : F(a) \geq p\}$ pour $p \in \{0{,}25 ; 0{,}50 ; 0{,}75\}$.
 - Écart interquartile : $\mathrm{IQR} = Q_3 - Q_1$.
 
-Voir [data/loader.py](data/loader.py) (`compute_percentiles_from_hmd`).
+Voir `_quantiles_from_dx` dans [scripts/sources.py](scripts/sources.py).
 
 > **Décision** — Quartiles calculés sur la distribution des décès $d_x$ **plutôt
 > que** sur les survivants $l_x$, **parce que** $d_x$ donne directement la densité
 > des âges au décès dont on veut la médiane et la dispersion.
 
-### 3.2 Interpolation de survie intra-cohorte — `interp_survival`
+### 3.2 Interpolation de survie intra-génération — `interp_survival`
 
 Les ancres `(âge, % vivants)` sont interpolées **linéairement** :
 
 $$p(a) = p_0 + (p_1 - p_0)\,\dfrac{a - a_0}{a_1 - a_0}$$
 
-Au-delà de la **dernière ancre**, prolongation de la pente du dernier segment,
-bornée à $[0, 100]$ :
+Au-delà de la **dernière ancre**, la fonction retourne `None`. Elle ne prolonge
+plus la pente du dernier segment : pour les générations récentes, cette dernière
+ancre correspond à l'âge atteint aujourd'hui, et le segment final ne couvre
+parfois qu'une seule année — une pente beaucoup trop raide pour être extrapolée
+sur plusieurs décennies.
 
-$$p(a) = \mathrm{clip}\!\left(p_n + \dfrac{p_n - p_{n-1}}{a_n - a_{n-1}}(a - a_n),\; 0,\; 100\right)$$
+### 3.3 Interpolation inter-générations — `get_cohort_survival`
 
-### 3.3 Interpolation inter-cohortes — `get_cohort_survival`
+Seules les générations de référence **ayant réellement atteint l'âge demandé**
+participent au calcul :
 
-Pour une année de naissance située entre deux cohortes de référence `lo` et `hi`,
-pondération linéaire des deux courbes interpolées :
+$$\mathcal{C}(a) = \{\, c : \text{âge de la dernière ancre de } c \geq a \,\}$$
+
+Pour une année de naissance encadrée par deux générations $lo$ et $hi$ de
+$\mathcal{C}(a)$, pondération linéaire des deux courbes :
 
 $$p = p_{lo} + (p_{hi} - p_{lo})\, w, \qquad w = \dfrac{\text{naissance} - lo}{hi - lo}$$
 
-Hors bornes, on retombe sur la cohorte de référence la plus proche. Voir
-[common.py](common.py).
+Au-delà de la génération la plus récente de $\mathcal{C}(a)$, **on retient sa
+valeur telle quelle**, sans extrapoler la tendance entre générations. Si
+$\mathcal{C}(a)$ est vide, la fonction retourne `None`.
+
+> **Décision** — *Pas d'extrapolation entre générations* **plutôt que**
+> prolongation de la tendance, **parce que** cette dernière amplifiait un écart
+> de 5 années de naissance sur 10 ans de projection et produisait une survie qui
+> **remontait avec l'âge**. **Limite** : la progression des générations les plus
+> récentes est légèrement sous-estimée, la courbe s'aplatissant sur son dernier
+> segment.
 
 ### 3.4 Effectifs de cohorte — page « Explorateur de cohorte »
 
-$$\text{naissances}_{\text{sexe}} = \text{BIRTHS\_BY\_YEAR}[\text{année}] \times \text{SEX\_RATIO}[\text{sexe}]$$
-$$\text{vivants} = \text{naissances} \times \dfrac{p(\text{âge actuel})}{100}, \qquad \text{âge actuel} = 2026 - \text{année de naissance}$$
+$$\text{naissances}_{\text{sexe}} = \text{naissances}[\text{année}] \times \text{SEX\_RATIO}[\text{sexe}]$$
+$$\text{vivants} = \text{naissances} \times \dfrac{p(\text{âge actuel})}{100}, \qquad \text{âge actuel} = \text{année courante} - \text{année de naissance}$$
 
-L'espérance résiduelle affichée provient de `RESIDUAL_LIFE_2025` (table du moment),
-interpolée à l'âge courant (plafonné à 95 ans). Voir
-[pages/03_cohorte_explorer.py](pages/03_cohorte_explorer.py).
+L'espérance résiduelle affichée provient de `RESIDUAL_LIFE_2025` (table du
+moment), interpolée à l'âge courant (plafonné à 95 ans), et présentée sous forme
+d'**âge de décès moyen attendu** : $\text{âge actuel} + e_{\text{résiduelle}}$.
 
-### 3.5 Décodage Eurostat JSON-stat — `fetch_eurostat_life_expectancy`
+### 3.5 Décodage Eurostat JSON-stat — `_jsonstat`
 
-La réponse Eurostat est au format **JSON-stat** : un dictionnaire `value` indexé
-par un entier linéaire. L'index est décodé par calcul des *strides* (produits
-cumulés des tailles de dimensions) pour retrouver `(geo, sex)`, puis pivoté en
-colonnes `e0_f`, `e0_m`, `e0_total`. Le code Eurostat `EL` (Grèce) est remappé en
-`GR`, et `EU27_2020` en `EU`. Voir [data/loader.py](data/loader.py).
+La réponse Eurostat est au format **JSON-stat 2.0** : un dictionnaire `value`
+indexé par un entier linéaire. L'index est décodé par calcul des *strides*
+(produits cumulés des tailles de dimensions) pour retrouver le n-uplet de
+dimensions `(geo, sex, age, time, …)`. Le décodeur est générique et sert aux
+trois appels Eurostat du projet. Voir [scripts/sources.py](scripts/sources.py).
+
+### 3.6 Authentification HMD
+
+HMD n'est **pas** utilisé par défaut, Eurostat fournissant les mêmes quantités
+en accès libre depuis 2014. La fonction `hmd_session()` reste disponible pour
+qui veut remonter avant 2014 avec un compte gratuit :
+
+```bash
+export HMD_USER="votre@email.com"
+export HMD_PASSWORD="motdepasse"
+uv run python -m scripts.refresh_data --hmd
+```
+
+mortality.org est une application ASP.NET Core : l'authentification HTTP Basic
+n'y fonctionne pas — elle renvoie un **200 OK contenant le formulaire de
+connexion**. Il faut récupérer le jeton `__RequestVerificationToken` sur la page
+de login, poster le formulaire, puis réutiliser la session. Le code vérifie le
+`content-type` des réponses pour ne jamais confondre une page HTML avec une
+table de mortalité.
 
 ---
 
@@ -141,100 +213,117 @@ colonnes `e0_f`, `e0_m`, `e0_total`. Le code Eurostat `EL` (Grèce) est remappé
 
 | Cas | Choix retenu | Justification |
 |---|---|---|
-| Fonctionnement sans compte HMD | Données embarquées par défaut | App utilisable hors-ligne ; API en option |
-| Survie de cohorte | Interpolation linéaire d'ancres arrondies | Compacité, pas de credentials ; précision suffisante pour la pédagogie (±5 %) |
-| Survie au-delà de la dernière ancre | Prolongation de la pente, bornée [0, 100] | Éviter les sauts ; rester dans un intervalle plausible |
-| Espérance résiduelle | Table **du moment** 2025 (`RESIDUAL_LIFE_2025`) | Donnée disponible ; l'écran avertit qu'elle **sous-estime** la survie réelle des générations |
+| Fraîcheur des données | CSV versionnés, régénérés par script | App utilisable hors-ligne ; provenance vérifiable ; diff Git lisible |
+| Source des quartiles | Eurostat `demo_mlifetable` | Mêmes quantités que HMD, sans compte ni fichier à importer |
+| Profondeur avant 1946 | OWID, tous sexes confondus | Seule source ouverte continue ; le détail par sexe n'existe pas avant |
+| Survie au-delà de la dernière ancre | `None`, aucune extrapolation | L'extrapolation produisait des valeurs démographiquement impossibles |
+| Espérance résiduelle | Table **du moment** 2025 | Donnée disponible ; l'écran avertit qu'elle **sous-estime** la survie réelle |
 | Couleurs | Palette fixe par entité (femmes `#ec4899`, hommes `#0284c7`, e₀ `#f97316`) | Lecture cohérente entre les quatre pages ; jamais recyclée |
-| Comparaison européenne | Eurostat 2024 embarqué, rafraîchissable | Instantané par défaut, actualisable à la demande |
+| Année courante | Dérivée de `date.today()` | Évite une péremption silencieuse au 1ᵉʳ janvier |
 
-> **Attention** — L'app affiche elle-même l'avertissement clé (page cohorte) : *les tables du
-> moment sous-estiment historiquement la survie des générations* — l'espérance
-> réelle d'une cohorte sera vraisemblablement **supérieure** si les progrès
-> sanitaires se poursuivent.
+> **Attention** — L'app affiche elle-même l'avertissement clé (page cohorte) :
+> *les tables du moment sous-estiment historiquement la survie des générations*.
+> L'espérance réelle d'une cohorte sera vraisemblablement **supérieure** si les
+> progrès sanitaires se poursuivent.
 
 ---
 
-## 5. Résultats chiffrés (données embarquées)
+## 5. Résultats chiffrés
 
-Valeurs lues dans `data/embedded.py` et `data/european.py` :
+Valeurs issues de `data/sources/`, extraction du 16 septembre 2026.
 
 | Indicateur | Femmes | Hommes |
 |---|---|---|
-| e₀ en **1900** | **48,2 ans** | **43,4 ans** |
-| e₀ en **2025** | **85,9 ans** | **80,3 ans** |
-| Gain 1900→2025 | **+37,7 ans** | **+36,9 ans** |
-| e₆₀ en 2025 | 28,0 ans | 23,5 ans |
-| e₆₅ en 2025 | 23,6 ans | 19,7 ans |
-| **IQR** des âges au décès 1900 → 2025 | **67 → 13 ans** | **65 → 17 ans** |
+| e₀ en **1946** | **65,2 ans** | **59,9 ans** |
+| e₀ en **2025** | **85,9 ans** | **80,4 ans** |
+| Gain 1946→2025 | **+20,7 ans** | **+20,5 ans** |
+| e₆₀ en 2025 | 28,0 ans | 23,9 ans |
+| e₆₅ en 2024 | 23,6 ans | 19,9 ans |
+| IQR des âges au décès, 2024 (mesuré) | **12 ans** (78 → 90) | **17 ans** (71 → 88) |
+| Écart-type des âges au décès, 2024 | 13,5 ans | 15,1 ans |
 
-- **Écart femmes − hommes** (e₀ 2025) : **5,6 ans**.
-- **Compression de la mortalité** : l'IQR féminin est divisé par ~5 (67 → 13 ans).
-  En 1900, mourir à 5 ans ou à 75 ans était également banal ; en 2025 les décès se
-  concentrent au-delà de 70 ans.
-- **Comparaison européenne (Eurostat 2024)** : sur **26 pays**, e₀ totale de la
-  **France = 83,0 ans**, au-dessus de la **moyenne UE-27 (81,5 ans)** ; en tête
-  Espagne et Suède (**83,7 ans**). Les femmes françaises (**85,8 ans**) sont parmi
-  les plus élevées d'Europe.
+Série longue tous sexes confondus (OWID) : **40,1 ans en 1816**, 45,1 en 1900,
+**34,8 en 1918**, 66,4 en 1950, 83,3 en 2023.
 
-> Ces chiffres sont des **approximations embarquées**. Avec des credentials HMD ou
-> un upload de table 1x1, la page « Distribution & variance » recalcule les
-> **vrais** quartiles et l'écart-type et les superpose aux estimations.
+- **Écart femmes − hommes** (e₀ 2025) : **5,5 ans**.
+- **Creux de 1918** : l'espérance de vie chute de 43,0 ans (1917) à **34,8 ans**,
+  sous l'effet conjugué de la guerre et de la grippe espagnole, puis remonte
+  immédiatement — illustration directe de ce qu'une table du moment mesure.
+- **Compression de la mortalité** : l'IQR féminin passe d'environ 67 ans en 1900
+  (estimation) à **12 ans en 2024** (mesuré).
+- **Comparaison européenne (Eurostat 2024)** : sur les **27 États membres**,
+  France **83,0 ans**, au-dessus de la **moyenne UE-27 (81,5 ans)** ; en tête
+  l'**Espagne (84,0 ans)** puis la **Suède (83,8 ans)**.
 
 ---
 
 ## 6. Visualisations
 
 Les graphiques sont **générés à la volée** par Plotly (aucun fichier image
-statique n'est stocké dans le dépôt) :
+statique dans le dépôt). **Chaque graphique porte une note « Comment lire ce
+graphique »** qui explique les axes, le sens d'une variation et le piège
+éventuel — rendue par `note_lecture()` dans [common.py](common.py).
 
 | Page | Graphiques |
 |---|---|
-| Vue générale | Courbes e₀/e₆₀/e₆₅ 1900–2025 (repères WWI 1918, WWII 1945, Covid 2020) ; barres horizontales triées des 26 pays UE avec la France encadrée et la moyenne UE-27 ; deux tops 10 |
-| Distribution & variance | Bande Q1–Q3 + médiane + e₀ ; aire d'évolution de l'IQR ; superposition quartiles HMD réels vs estimés (si import) |
+| Vue générale | Courbes annuelles e₀/e₆₀/e₆₅ avec série longue depuis 1816 en fond (repères 1918, 1940, Covid) ; barres horizontales triées des 27 pays UE, France cerclée, moyenne UE-27 ; deux tops 10 |
+| Distribution & variance | Bande Q1–Q3 + médiane + e₀, avec repère visuel de la frontière estimé / mesuré ; aire d'évolution de l'IQR |
 | Explorateur de cohorte | Courbe de survie empilée (vivants / décédés cumulés) avec repère de l'âge courant |
 | Âge fixe × générations | Aire du % encore en vie à âge fixe selon l'année d'observation, flèche de progression |
 
 Le thème Plotly (`plotly_white` / `plotly_dark`) suit le thème Streamlit courant
-(`apply_layout` dans [common.py](common.py)). Chaque page propose un export **CSV**
-des données affichées (`download_csv`).
+(`apply_layout`). Chaque page propose un export **CSV** (`download_csv`).
 
 ---
 
 ## 7. Pipeline d'exécution
 
 ```text
-data/embedded.py  ─┐
-data/european.py  ─┤─► common.py (interpolation, palette, thème) ─► pages/*.py ─► graphiques Plotly + métriques
-data/loader.py  ──┘        (HMD API / upload / Eurostat API : rafraîchissement optionnel)
+APIs publiques ──► scripts/refresh_data.py ──► data/sources/*.csv + manifest.json
+(INSEE, Eurostat,                                        │
+ Our World in Data)                                      ▼
+                                              data/repository.py
+                                                         │
+                     data/embedded.py ───────────────────┤
+                  (survie par génération)                ▼
+                                          common.py (interpolation, palette, thème)
+                                                         │
+                                                         ▼
+                                            pages/*.py ──► figures Plotly + métriques
 ```
 
-1. Chargement des constantes embarquées (repli) au démarrage.
-2. `common.py` interpole les cohortes et fournit la palette / le template.
-3. Chaque page construit ses `DataFrame` (avec `@st.cache_data`) et ses figures.
-4. En option : `data/loader.py` télécharge HMD (credentials ou upload) et/ou
-   interroge Eurostat pour remplacer les valeurs par défaut.
+1. `refresh_data.py` interroge les API et écrit les CSV **et** le manifeste.
+2. `repository.py` lit ces CSV (mise en cache `lru_cache`), assemble les séries
+   et expose `millesime()` pour afficher la provenance sous les graphiques.
+3. `embedded.py` fournit ce qu'aucune API ne publie.
+4. `common.py` interpole les générations et fournit palette, thème et notes de
+   lecture.
+5. Chaque page construit ses `DataFrame` (avec `@st.cache_data`) et ses figures.
 
 ---
 
 ## 8. Limites de représentativité
 
-- **Approximations, pas données brutes** : les valeurs par défaut sont des
-  estimations arrondies (quartiles en années entières, effectifs au millier). La
-  **survie de cohorte est annoncée à ±5 %**.
-- **Ancres de cohorte éparses** : `COHORT_SURVIVAL` ne contient que quelques points
-  `(âge, %)` par génération ; tout le reste est **interpolé linéairement**, et les
-  âges au-delà de la dernière ancre sont **extrapolés** (pente du dernier segment).
+- **Survie par génération estimée** : `COHORT_SURVIVAL` ne contient que quelques
+  ancres `(âge, %)` par génération, interpolées linéairement. Précision annoncée
+  **±5 %**. C'est la limite la plus forte du projet, et elle est structurelle :
+  aucune source ouverte ne publie ces tables pour la France.
+- **Quartiles avant 2014 estimés** : la page « Distribution & variance » mélange
+  deux régimes, séparés visuellement par un repère. Les valeurs estimées
+  s'écartent des valeurs mesurées de plusieurs années sur Q3.
+- **Détail par sexe absent avant 1946** : la profondeur historique n'existe qu'en
+  « tous sexes confondus » (OWID).
+- **Générations récentes plafonnées** : au-delà de la dernière génération ayant
+  atteint un âge donné, la valeur est reprise telle quelle. La courbe s'aplatit
+  sur son dernier segment plutôt que de poursuivre sa progression — choix
+  conservateur assumé (§ 3.3).
 - **Biais période vs génération** : l'espérance résiduelle et la distribution des
   âges au décès reposent sur des **tables du moment**. Elles décrivent une
   génération fictive soumise aux conditions d'une seule année et **sous-estiment**
   la survie réelle des cohortes en cours.
-- **Périmètre géographique** : les naissances (`BIRTHS_BY_YEAR`) concernent la
-  **France métropolitaine** ; la comparaison européenne est figée à **Eurostat
-  2024** sauf rafraîchissement API.
-- **Cohortes récentes tronquées** : pour les générations 1965–1990, les dernières
-  ancres s'arrêtent à un âge jeune (la cohorte n'a pas encore vieilli), ce qui
-  limite la portée des courbes de survie affichées.
+- **Millésime figé** : les données ne sont à jour que du dernier
+  `refresh_data` — date d'extraction consultable dans le manifeste et affichée
+  sous chaque graphique.
 
 ---
 
@@ -242,15 +331,42 @@ data/loader.py  ──┘        (HMD API / upload / Eurostat API : rafraîchiss
 
 | Piste | Bénéfice attendu |
 |---|---|
-| Basculer par défaut sur les vraies tables HMD (cache local) | Supprimer les approximations ±5 % |
-| Construire de vraies tables de **génération** | Corriger le biais période sur la survie de cohorte |
+| Intégrer les tables HMD 1×1 par défaut (compte + cache local) | Quartiles réels avant 2014, détail par sexe avant 1946 |
+| Construire de vraies tables de **génération** à partir des tables 1×1 | Supprimer l'approximation ±5 %, la limite la plus forte du projet |
+| Dériver `RESIDUAL_LIFE_2025` d'Eurostat `demo_mlexpec` (tous âges) | Remplacer la dernière table saisie à la main |
 | Intervalles de confiance / bandes d'incertitude | Rendre visible l'imprécision des estimations |
-| Étendre la comparaison hors UE (HMD multi-pays) | Contexte mondial, pas seulement européen |
-| Tests unitaires sur l'interpolation / le décodage JSON-stat | Fiabiliser `common.py` et `data/loader.py` |
+| Espérance de vie **par département** (INSEE publie `LEXPEC` par DEP) | Dimension territoriale, déjà accessible sans travail de collecte |
+| Rafraîchissement automatique par la CI (cron mensuel + PR) | Supprimer l'étape manuelle de mise à jour |
+
+---
+
+## 10. Qualité & reprise
+
+```bash
+uv run ruff check .                     # lint
+uv run pytest -q                        # invariants démographiques
+uv run python scripts/check_pages.py    # rendu des 5 pages
+```
+
+Les tests de [tests/test_survie_cohorte.py](tests/test_survie_cohorte.py) portent
+sur des **propriétés**, pas sur des valeurs : la survie décroît avec l'âge, elle
+ne régresse pas d'une génération à la suivante (tolérance 0,5 point, l'arrondi
+des ancres étant à ±5 %), elle reste dans [0, 100], et aucune génération ne se
+voit attribuer de survie à un âge qu'elle n'a pas atteint. Ce sont ces invariants
+qui ont mis au jour le creux de survie artificiel des générations 1963–1967, et
+deux ancres corrompues de la génération 1965.
+
+La CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) exécute les trois
+commandes ci-dessus à chaque push et chaque pull request.
 
 ---
 
 ## Licences & composants
+
+Code sous **MIT** — voir [LICENSE](LICENSE). Les **données** relèvent des
+conditions de leurs producteurs : Licence Ouverte Etalab (INSEE), politique de
+réutilisation de la Commission européenne (Eurostat), CC BY 4.0 (Our World in
+Data, relayant HMD).
 
 | Composant | Rôle | Licence |
 |---|---|---|
@@ -258,11 +374,5 @@ data/loader.py  ──┘        (HMD API / upload / Eurostat API : rafraîchiss
 | Plotly | Graphiques interactifs | MIT |
 | pandas | Manipulation de tableaux | BSD-3-Clause |
 | numpy | Calcul numérique (quartiles, variance) | BSD-3-Clause |
-| requests | Appels API HMD / Eurostat | Apache-2.0 |
-| ruff | Lint (groupe `dev`) | MIT |
-| **Ce projet** | Code applicatif | MIT — Copyright (c) 2026 floSa |
-
-**Données** : HMD (mortality.org, conditions d'utilisation propres — inscription
-gratuite), Eurostat (réutilisation libre avec attribution), INSEE / DREES
-(diffusion publique). Se reporter aux conditions de chaque fournisseur pour toute
-réutilisation des données.
+| requests | Appels aux API | Apache-2.0 |
+| ruff · pytest | Lint et tests (groupe `dev`) | MIT |
