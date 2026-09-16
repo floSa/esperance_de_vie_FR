@@ -30,28 +30,39 @@ c3.metric("Écart femmes − hommes",
           f"{fr_num(derniere['femmes'] - derniere['hommes'])} ans")
 
 st.markdown("---")
-st.subheader("Les quatre vues")
+st.subheader("Les six vues")
+st.caption("Une question par page, une source, une période.")
 
 col_a, col_b = st.columns(2)
 with col_a:
     st.page_link(
         "pages/01_vue_generale.py",
-        label="**Vue générale** — évolution 1900–2025 et comparaison européenne",
+        label="**Vue générale** — comment l'espérance de vie a évolué",
         icon="📈",
     )
     st.page_link(
-        "pages/02_distribution_variance.py",
-        label="**Distribution & variance** — compression de la mortalité (Q1–Q3)",
-        icon="📐",
+        "pages/02_esperance_par_age.py",
+        label="**Espérance de vie par âge** — combien d'années restent à vivre",
+        icon="🎚️",
+    )
+    st.page_link(
+        "pages/03_comparaison_europe.py",
+        label="**Comparaison européenne** — où se situe la France",
+        icon="🇪🇺",
     )
 with col_b:
     st.page_link(
-        "pages/03_explorateur_cohorte.py",
-        label="**Explorateur de cohorte** — qui est encore en vie ?",
+        "pages/04_distribution_variance.py",
+        label="**Distribution & variance** — à quel âge on meurt",
+        icon="📐",
+    )
+    st.page_link(
+        "pages/05_explorateur_cohorte.py",
+        label="**Explorateur de cohorte** — qui est encore en vie",
         icon="👥",
     )
     st.page_link(
-        "pages/04_survie_age_donne.py",
+        "pages/06_survie_age_donne.py",
         label="**Survie à un âge donné** — comparaison entre générations",
         icon="🔄",
     )
