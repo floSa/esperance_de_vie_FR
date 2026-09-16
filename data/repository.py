@@ -71,10 +71,8 @@ def esperance_vie() -> pd.DataFrame:
     """
     insee = _read("esperance_vie_fr_insee").assign(source="insee")
     eurostat = _read("esperance_vie_fr_tous_ages_eurostat").assign(source="eurostat")
-
-    doublons = eurostat["age"].isin(AGES_INSEE)
-    fusion = pd.concat([insee, eurostat[~doublons]], ignore_index=True)
-    return fusion.sort_values(["sexe", "age", "year"]).reset_index(drop=True)
+    fusion = pd.concat([insee, eurostat], ignore_index=True)
+    return fusion.sort_values(["sexe", "age", "year", "source"]).reset_index(drop=True)
 
 
 @lru_cache(maxsize=1)
@@ -98,13 +96,32 @@ def esperance_vie_longue() -> pd.DataFrame:
     return _read("esperance_vie_fr_longue_owid")
 
 
-def serie_par_sexe(age: int) -> pd.DataFrame:
-    """Table large `year × sexe` pour un âge donné."""
+def serie_par_sexe(age: int, source: str | None = None) -> pd.DataFrame:
+    """Table large `year × sexe` pour un âge donné.
+
+    `source` restreint à un fournisseur (`"insee"` ou `"eurostat"`). C'est ce
+    qui permet de tracer tous les âges sur une période identique : Eurostat
+    couvre les 96 âges sur la même fenêtre, l'INSEE seulement cinq d'entre eux
+    mais depuis 1946.
+    """
     df = esperance_vie()
-    return (df[df["age"] == age]
-            .pivot(index="year", columns="sexe", values="esperance")
-            .dropna(how="all")
-            .reset_index())
+    df = df[df["age"] == age]
+    if source is not None:
+        df = df[df["source"] == source]
+    else:
+        # Les deux sources se recouvrent sur cinq âges ; l'INSEE l'emporte pour
+        # sa profondeur historique, sinon le pivot verrait deux valeurs par an.
+        df = df.drop_duplicates(subset=["year", "sexe"], keep="first")
+    return (df.pivot(index="year", columns="sexe", values="esperance")
+              .dropna(how="all")
+              .reset_index())
+
+
+@lru_cache(maxsize=1)
+def periode_comparable() -> tuple[int, int]:
+    """Fenêtre d'années disponible pour **tous** les âges, sans exception."""
+    euro = _read("esperance_vie_fr_tous_ages_eurostat")
+    return int(euro["year"].min()), int(euro["year"].max())
 
 
 # ---------------------------------------------------------------------------

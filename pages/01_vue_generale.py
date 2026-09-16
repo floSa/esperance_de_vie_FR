@@ -36,7 +36,11 @@ age = st.select_slider(
     key="age_observe",
 )
 libelle_age = "la naissance" if age == 0 else f"{age} ans"
-serie = repo.serie_par_sexe(age)
+# Toujours Eurostat : c'est la seule source qui couvre les 96 âges sur une
+# période identique. Mélanger avec l'INSEE ferait changer l'axe des années
+# selon l'âge choisi, et deux sélections ne seraient plus comparables.
+serie = repo.serie_par_sexe(age, source="eurostat")
+an_debut, an_fin = repo.periode_comparable()
 y_label = ("Espérance de vie à la naissance (ans)" if age == 0
            else f"Années restant à vivre à {age} ans")
 
@@ -46,7 +50,7 @@ y_label = ("Espérance de vie à la naissance (ans)" if age == 0
 
 derniere = serie.iloc[-1]
 premiere = serie.iloc[0]
-an_recent, an_ancien = int(derniere["year"]), int(premiere["year"])
+an_premier = int(premiere["year"])
 gain_f = float(derniere["femmes"] - premiere["femmes"])
 
 c1, c2, c3, c4, c5 = st.columns(5)
@@ -55,57 +59,29 @@ c1.metric(
     "Naissance" if age == 0 else f"{age} ans",
     help="Âge sélectionné avec le curseur ci-dessus",
 )
-c2.metric(
-    f"Femmes, {an_recent}",
-    f"{fr_num(derniere['femmes'])} ans",
-    help=f"Années restant à vivre à {libelle_age}",
-)
-c3.metric(f"Hommes, {an_recent}", f"{fr_num(derniere['hommes'])} ans")
+c2.metric(f"Femmes, {an_fin}", f"{fr_num(derniere['femmes'])} ans")
+c3.metric(f"Hommes, {an_fin}", f"{fr_num(derniere['hommes'])} ans")
 c4.metric("Écart femmes − hommes",
           f"{fr_num(derniere['femmes'] - derniere['hommes'])} ans")
-c5.metric(
-    f"Gain femmes depuis {an_ancien}",
-    f"+{fr_num(gain_f)} ans",
-    help=f"Première année disponible pour cet âge : {an_ancien}",
-)
+c5.metric(f"Gain femmes depuis {an_premier}", f"+{fr_num(gain_f)} ans")
 
-if age in repo.AGES_INSEE:
+if age == 0:
     st.caption(
-        f"**Période couverte : {an_ancien} → {an_recent}.** L'INSEE publie cet "
-        "âge depuis 1946."
+        f"En {an_fin}, une fille qui naît vivra **{fr_num(derniere['femmes'])} "
+        f"ans** en moyenne. Un garçon, **{fr_num(derniere['hommes'])} ans**."
     )
 else:
     st.caption(
-        f"**Période couverte : {an_ancien} → {an_recent}.** L'INSEE ne publie "
-        "que cinq âges — 0, 1, 20, 40 et 60 ans — et eux seuls remontent à 1946. "
-        "Cet âge-ci vient d'Eurostat, dont la série française démarre en 1998."
-    )
-
-if age != 0:
-    st.caption(
-        f"Une femme ayant atteint {age} ans en {an_recent} peut espérer vivre "
-        f"encore **{fr_num(derniere['femmes'])} ans**, soit un décès vers "
-        f"**{fr_num(age + derniere['femmes'], 0)} ans**."
+        f"En {an_fin}, une femme de {age} ans vivra encore "
+        f"**{fr_num(derniere['femmes'])} ans** en moyenne. "
+        f"Elle mourra donc vers **{fr_num(age + derniere['femmes'], 0)} ans**."
     )
 
 # ---------------------------------------------------------------------------
 # 3. Évolution
 # ---------------------------------------------------------------------------
 
-annee_max = an_recent
-
 fig = go.Figure()
-
-# Pour l'espérance à la naissance, la série longue tous sexes confondus fait
-# apparaître 1918 et 1940, que les séries par sexe (à partir de 1946) ratent.
-if age == 0:
-    fig.add_trace(go.Scatter(
-        x=longue["year"], y=longue["esperance"],
-        line=dict(color="rgba(140,140,140,0.75)", width=1.5),
-        name="Tous sexes (série longue)",
-        hovertemplate="%{x} : %{y:.1f} ans<extra>tous sexes</extra>",
-    ))
-
 for sexe, couleur in (("femmes", COLOR_FEMMES), ("hommes", COLOR_HOMMES)):
     fig.add_trace(go.Scatter(
         x=serie["year"], y=serie[sexe],
@@ -113,75 +89,87 @@ for sexe, couleur in (("femmes", COLOR_FEMMES), ("hommes", COLOR_HOMMES)):
         name=sexe.capitalize(),
         hovertemplate="%{x} : %{y:.1f} ans<extra>" + sexe + "</extra>",
     ))
-
-if age == 0:
-    for x, txt in ((1918, "1918"), (1940, "1940"), (2020, "Covid")):
-        fig.add_vline(x=x, line_dash="dot", line_color="gray", opacity=0.5)
-        fig.add_annotation(x=x, y=1.04, yref="paper", text=txt, showarrow=False,
-                           font=dict(size=11))
-    fig.update_xaxes(range=[1900, annee_max])
-
 fig.update_yaxes(title=y_label)
-fig.update_xaxes(title="Année")
-apply_layout(fig, height=480, legend=dict(orientation="h", yanchor="bottom", y=1.08, x=0))
+fig.update_xaxes(title="Année", range=[an_debut - 1, an_fin + 1])
+apply_layout(fig, height=440,
+             legend=dict(orientation="h", yanchor="bottom", y=1.08, x=0),
+             title=f"Espérance de vie à {libelle_age} — {an_debut} à {an_fin}")
 st.plotly_chart(fig, width='stretch')
 
+exemple = round(float(derniere["femmes"]))
 if age == 0:
-    note_lecture(
-        "L'axe vertical est un nombre d'années."
-        "<br>"
-        "Il indique combien de temps vivrait un nouveau-né si la mortalité de "
-        "son année de naissance ne changeait plus jamais."
-        "<br><br>"
-        "Ce n'est pas une prédiction. C'est un résumé de la mortalité d'une "
-        "année."
-        "<br>"
-        "D'où les chutes brutales : en <strong>1918</strong>, la valeur tombe à "
-        "<strong>34,8 ans</strong>, contre 43,0 l'année d'avant. Puis elle "
-        "remonte aussitôt."
-        "<br><br>"
-        "<strong>Les trois courbes.</strong>"
-        "<br>"
-        "La grise couvre les deux sexes réunis, depuis 1816."
-        "<br>"
-        "La rose et la bleue démarrent en 1946. Avant cette date, l'INSEE ne "
-        "publie pas le détail par sexe.",
-        f"{repo.millesime('esperance_vie_fr_longue_owid')} · "
-        f"{repo.millesime('esperance_vie_fr_insee')}",
-    )
+    quoi = ("Le nombre d'années que vivra un bébé né cette année-là, "
+            "si la mortalité ne change plus.")
+    piege = ("Ce n'est pas une prévision. C'est une photo de la mortalité "
+             "de l'année.")
 else:
-    exemple = round(float(derniere["femmes"]))
-    note_lecture(
-        "L'axe vertical est une durée, pas un âge."
-        "<br>"
-        f"Il indique le nombre d'années qu'il reste à vivre à une personne de "
-        f"<strong>{age} ans</strong>."
-        "<br><br>"
-        f"Exemple : un point à {exemple} se lit « encore {exemple} ans à "
-        f"vivre ». Soit un décès vers {age + exemple} ans."
-        "<br><br>"
-        f"<strong>Seuls comptent ceux qui ont atteint {age} ans.</strong>"
-        "<br>"
-        "Les personnes décédées avant n'entrent pas dans le calcul."
-        "<br>"
-        f"C'est pourquoi {age} + {exemple} dépasse l'espérance de vie à la "
-        "naissance."
-        "<br><br>"
-        f"<strong>Pourquoi la courbe démarre en {an_ancien} ?</strong>"
-        "<br>"
-        + (
-            "L'INSEE publie cet âge depuis 1946."
-            if age in repo.AGES_INSEE else
-            "L'INSEE ne publie que cinq âges : 0, 1, 20, 40 et 60 ans. Eux "
-            "remontent à 1946."
-            "<br>"
-            "Tous les autres âges viennent d'Eurostat, qui commence en 1998."
-        ),
-        repo.millesime(repo.source_de_l_age(age)),
-    )
+    quoi = (f"Le nombre d'années qu'il reste à vivre à une personne de "
+            f"{age} ans cette année-là.")
+    piege = (f"C'est une durée, pas un âge. Un point à {exemple} veut dire "
+             f"« encore {exemple} ans à vivre », soit un décès vers "
+             f"{age + exemple} ans.")
+
+note_lecture(
+    "<strong>Axe horizontal</strong> : les années, "
+    f"de {an_debut} à {an_fin}."
+    "<br>"
+    "<strong>Axe vertical</strong> : " + quoi
+    + "<br>"
+    "<strong>Deux courbes</strong> : les femmes en rose, les hommes en bleu."
+    "<br><br>"
+    + piege
+    + "<br><br>"
+    f"L'axe des années ne bouge jamais : toujours {an_debut} à {an_fin}. "
+    "Deux âges se comparent donc directement."
+    + (
+        f"<br>Eurostat ne publie cet âge qu'à partir de {an_premier} : la "
+        "courbe démarre plus à droite."
+        if an_premier > an_debut else ""
+    ),
+    repo.millesime("esperance_vie_fr_tous_ages_eurostat"),
+)
 
 # ---------------------------------------------------------------------------
-# 3. Comparaison européenne
+# 4. Série historique (indépendante du curseur)
+# ---------------------------------------------------------------------------
+
+st.subheader("🕰️ Depuis 1816 — espérance de vie à la naissance")
+
+fig_longue = go.Figure()
+fig_longue.add_trace(go.Scatter(
+    x=longue["year"], y=longue["esperance"],
+    line=dict(color=COLOR_E0, width=2),
+    name="Femmes et hommes réunis",
+    hovertemplate="%{x} : %{y:.1f} ans<extra></extra>",
+))
+for an, txt in ((1871, "1871"), (1918, "1918"), (1940, "1940")):
+    fig_longue.add_vline(x=an, line_dash="dot", line_color="gray", opacity=0.5)
+    fig_longue.add_annotation(x=an, y=1.05, yref="paper", text=txt,
+                              showarrow=False, font=dict(size=11))
+fig_longue.update_yaxes(title="Espérance de vie à la naissance (ans)")
+fig_longue.update_xaxes(title="Année")
+apply_layout(fig_longue, height=380, showlegend=False,
+             title="France, 1816–2023, femmes et hommes réunis")
+st.plotly_chart(fig_longue, width='stretch')
+
+note_lecture(
+    "<strong>Ce graphique ne dépend pas du curseur.</strong>"
+    "<br>"
+    "Il montre toujours l'espérance de vie à la naissance, femmes et hommes "
+    "réunis, de 1816 à 2023."
+    "<br><br>"
+    "Chaque creux est une crise de mortalité."
+    "<br>"
+    "1871 : guerre franco-prussienne. 1918 : grippe espagnole et fin de la "
+    "Première Guerre. 1940 : Seconde Guerre."
+    "<br><br>"
+    "En 1918, la valeur tombe à <strong>34,8 ans</strong>, contre 43,0 "
+    "l'année d'avant. Elle remonte dès l'année suivante.",
+    repo.millesime("esperance_vie_fr_longue_owid"),
+)
+
+# ---------------------------------------------------------------------------
+# 5. Comparaison européenne
 # ---------------------------------------------------------------------------
 
 annee_eu = repo.annee_europe()
