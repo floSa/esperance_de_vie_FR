@@ -41,7 +41,7 @@ ce qui a bougé d'un rafraîchissement à l'autre.
 | Jeu | Source | Accès | Couverture |
 |---|---|---|---|
 | Espérance de vie par sexe (âges 0, 1, 20, 40, 60) | INSEE — API Melodi, `DS_DECES_MORTALITE_SERIES` (`EC_MEASURE=LEXPEC`) | Ouvert, sans jeton | 1946–2025 |
-| Espérance de vie à 65 ans | Eurostat — `demo_mlexpec` | Ouvert | 1998–2024 |
+| Espérance de vie à tous les âges (0 à 95 ans) | Eurostat — `demo_mlexpec` | Ouvert | 1998–2024 |
 | Espérance de vie, série longue (tous sexes) | Our World in Data — `grapher/life-expectancy`, d'après HMD | Ouvert (CC BY) | 1816–2023 |
 | Naissances vivantes annuelles | INSEE — `DS_NAISSANCES_FECONDITE_SERIES` (`LVB_PLACE_REG`) | Ouvert | 1901–2025 |
 | Distribution des âges au décès (`dx` → quartiles) | Eurostat — `demo_mlifetable` | Ouvert | 2014–2024 |
@@ -90,7 +90,7 @@ flowchart LR
 
 | Page | Contenu |
 |---|---|
-| **Vue générale** | Évolution annuelle de e₀ / e₆₀ / e₆₅, série longue depuis 1816 faisant apparaître 1918 et 1940, comparaison des 27 pays de l'UE |
+| **Vue générale** | Évolution annuelle de l'espérance de vie à l'âge choisi (curseur 0 → 95 ans), série longue depuis 1816 faisant apparaître 1918 et 1940, comparaison des 27 pays de l'UE |
 | **Distribution & variance** | Bande Q1–Q3 des âges au décès, médiane vs e₀, évolution de l'IQR : la **compression de la mortalité** |
 | **Explorateur de cohorte** | Pour une année de naissance et un sexe : courbe de survie, effectifs nés / vivants / décédés, âge de décès moyen attendu |
 | **Survie à un âge donné** | À âge constant, part de la génération encore en vie selon l'année d'observation |

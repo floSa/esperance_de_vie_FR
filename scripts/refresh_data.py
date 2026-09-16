@@ -25,7 +25,7 @@ OUT_DIR = Path(__file__).resolve().parent.parent / "data" / "sources"
 # Chaque entrée : nom de fichier → fonction sans argument
 OPEN_DATASETS = {
     "esperance_vie_fr_insee": sources.fetch_insee_life_expectancy,
-    "esperance_vie_fr_65_eurostat": sources.fetch_eurostat_life_expectancy_fr,
+    "esperance_vie_fr_tous_ages_eurostat": sources.fetch_eurostat_life_expectancy_fr,
     "esperance_vie_fr_longue_owid": sources.fetch_owid_life_expectancy,
     "naissances_fr_insee": sources.fetch_insee_births,
     "distribution_deces_eurostat": sources.fetch_eurostat_death_distribution,

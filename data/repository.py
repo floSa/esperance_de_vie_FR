@@ -57,18 +57,35 @@ def millesime(nom: str) -> str:
 # Espérance de vie
 # ---------------------------------------------------------------------------
 
+AGES_INSEE = (0, 1, 20, 40, 60)
+
+
 @lru_cache(maxsize=1)
 def esperance_vie() -> pd.DataFrame:
-    """Espérance de vie par année, sexe et âge exact (0, 1, 20, 40, 60, 65).
+    """Espérance de vie par année, sexe et âge exact, de 0 à 95 ans.
 
-    Les âges 0 à 60 viennent de l'INSEE (1946–2025), l'âge 65 d'Eurostat
-    (1998–2024) qui est le seul à le publier.
+    Deux sources se complètent, distinguées par la colonne `source` :
+    l'INSEE remonte à 1946 mais ne publie que cinq âges ; Eurostat publie les
+    96 âges mais seulement depuis 1998. Sur les cinq âges communs, l'INSEE est
+    prioritaire pour sa profondeur historique.
     """
-    insee = _read("esperance_vie_fr_insee")
-    eurostat = _read("esperance_vie_fr_65_eurostat")
-    return (pd.concat([insee, eurostat], ignore_index=True)
-              .sort_values(["sexe", "age", "year"])
-              .reset_index(drop=True))
+    insee = _read("esperance_vie_fr_insee").assign(source="insee")
+    eurostat = _read("esperance_vie_fr_tous_ages_eurostat").assign(source="eurostat")
+
+    doublons = eurostat["age"].isin(AGES_INSEE)
+    fusion = pd.concat([insee, eurostat[~doublons]], ignore_index=True)
+    return fusion.sort_values(["sexe", "age", "year"]).reset_index(drop=True)
+
+
+@lru_cache(maxsize=1)
+def ages_disponibles() -> tuple[int, ...]:
+    return tuple(sorted(esperance_vie()["age"].unique().tolist()))
+
+
+def source_de_l_age(age: int) -> str:
+    """Nom du jeu de données d'où provient cet âge, pour afficher sa provenance."""
+    return ("esperance_vie_fr_insee" if age in AGES_INSEE
+            else "esperance_vie_fr_tous_ages_eurostat")
 
 
 @lru_cache(maxsize=1)

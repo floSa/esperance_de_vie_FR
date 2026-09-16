@@ -16,7 +16,6 @@ from common import (
     persist,
     render_sidebar,
     source_note,
-    valeur_selectionnee,
 )
 
 st.set_page_config(page_title="Survie à un âge donné · Espérance de vie",
@@ -48,8 +47,6 @@ with col_age:
         "Âge atteint", options=[35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90],
         key="age_fixe",
     )
-
-valeur_selectionnee("Âge atteint", f"{age} ans")
 
 # ---------------------------------------------------------------------------
 # 2. Série : % encore en vie à `age` ans, par année d'observation
@@ -83,19 +80,21 @@ gain = pct_fin - pct_debut
 # 3. Chiffres clés
 # ---------------------------------------------------------------------------
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric(
+c1, c2, c3, c4, c5 = st.columns(5)
+c1.metric("Âge atteint", f"{age} ans",
+          help="Âge sélectionné avec le curseur ci-dessus")
+c2.metric(
     f"Génération {an_debut - age}",
     f"{fr_num(pct_debut)} %",
     help=f"Part encore en vie quand cette génération a eu {age} ans, en {an_debut}",
 )
-c2.metric(
+c3.metric(
     f"Génération {an_fin - age}",
     f"{fr_num(pct_fin)} %",
     help=f"Part encore en vie quand cette génération a eu {age} ans, en {an_fin}",
 )
-c3.metric("Progression", f"+{fr_num(gain)} points")
-c4.metric("Générations comparées", f"{an_debut - age} → {an_fin - age}")
+c4.metric("Progression", f"+{fr_num(gain)} points")
+c5.metric("Générations comparées", f"{an_debut - age} → {an_fin - age}")
 
 st.markdown(
     f"> Sur **{fr_num(pct_debut)} %** de la génération {an_debut - age} encore "

@@ -19,7 +19,7 @@
       60
     ],
     "lignes": 800,
-    "extrait_le": "2026-09-16T08:45:39+00:00"
+    "extrait_le": "2026-09-16T12:45:44+00:00"
   },
   "esperance_vie_fr_65_eurostat": {
     "fichier": "esperance_vie_fr_65_eurostat.csv",
@@ -51,7 +51,7 @@
     },
     "annees": "1816–2023",
     "lignes": 208,
-    "extrait_le": "2026-09-16T08:45:39+00:00"
+    "extrait_le": "2026-09-16T12:45:45+00:00"
   },
   "naissances_fr_insee": {
     "fichier": "naissances_fr_insee.csv",
@@ -66,7 +66,7 @@
     },
     "annees": "1901–2025",
     "lignes": 125,
-    "extrait_le": "2026-09-16T08:45:39+00:00"
+    "extrait_le": "2026-09-16T12:45:46+00:00"
   },
   "distribution_deces_eurostat": {
     "fichier": "distribution_deces_eurostat.csv",
@@ -85,7 +85,7 @@
     "millesime_source": "2026-06-04T23:00:00+0200",
     "annees": "2014–2024",
     "lignes": 22,
-    "extrait_le": "2026-09-16T08:45:39+00:00"
+    "extrait_le": "2026-09-16T12:45:46+00:00"
   },
   "esperance_vie_europe_eurostat": {
     "fichier": "esperance_vie_europe_eurostat.csv",
@@ -105,6 +105,25 @@
     "millesime_source": "2026-06-04T23:00:00+0200",
     "annee_retenue": 2024,
     "lignes": 41,
-    "extrait_le": "2026-09-16T08:45:40+00:00"
+    "extrait_le": "2026-09-16T12:45:46+00:00"
+  },
+  "esperance_vie_fr_tous_ages_eurostat": {
+    "fichier": "esperance_vie_fr_tous_ages_eurostat.csv",
+    "libelle": "Espérance de vie par sexe et âge exact (0 à 95 ans), France",
+    "fournisseur": "Eurostat",
+    "jeu": "demo_mlexpec",
+    "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_mlexpec",
+    "parametres": {
+      "geo": "FR",
+      "sex": [
+        "F",
+        "M"
+      ]
+    },
+    "millesime_source": "2026-06-04T23:00:00+0200",
+    "annees": "1998–2024",
+    "ages": "0–95",
+    "lignes": 4832,
+    "extrait_le": "2026-09-16T12:45:45+00:00"
   }
 }

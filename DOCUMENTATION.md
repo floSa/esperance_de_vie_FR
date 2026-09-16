@@ -17,7 +17,7 @@ structurent les quatre pages :
 
 | Page | Question posée | Indicateur central |
 |---|---|---|
-| Vue générale | Comment évolue l'espérance de vie et où se situe la France en Europe ? | e₀, e₆₀, e₆₅ |
+| Vue générale | Comment évolue l'espérance de vie et où se situe la France en Europe ? | Espérance de vie à tout âge de 0 à 95 ans |
 | Distribution & variance | Les âges au décès se sont-ils resserrés autour d'un âge élevé ? | Quartiles Q1–Q3, IQR, écart-type |
 | Explorateur de cohorte | Parmi les personnes nées une année donnée, combien sont encore en vie ? | Courbe de survie, effectifs |
 | Survie à un âge donné | À âge constant, la survie s'améliore-t-elle d'une génération à l'autre ? | % vivants à âge fixe |
@@ -55,7 +55,7 @@ uv run python -m scripts.refresh_data
 | Jeu (`data/sources/`) | Source | Jeu de données | Couverture |
 |---|---|---|---|
 | `esperance_vie_fr_insee.csv` | INSEE, API Melodi | `DS_DECES_MORTALITE_SERIES`, `EC_MEASURE=LEXPEC` | 1946–2025, sexes F/M, âges 0·1·20·40·60 |
-| `esperance_vie_fr_65_eurostat.csv` | Eurostat | `demo_mlexpec`, `age=Y65` | 1998–2024, sexes F/M |
+| `esperance_vie_fr_tous_ages_eurostat.csv` | Eurostat | `demo_mlexpec`, tous âges | 1998–2024, sexes F/M, âges 0 à 95 |
 | `esperance_vie_fr_longue_owid.csv` | Our World in Data (relais HMD) | `grapher/life-expectancy` | 1816–2023, tous sexes |
 | `naissances_fr_insee.csv` | INSEE, API Melodi | `DS_NAISSANCES_FECONDITE_SERIES`, `LVB_PLACE_REG` | 1901–2025 |
 | `distribution_deces_eurostat.csv` | Eurostat | `demo_mlifetable`, `indic_de=NUMBERDYING` (`dx`) | 2014–2024, sexes F/M |

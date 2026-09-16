@@ -17,7 +17,6 @@ from common import (
     persist,
     render_sidebar,
     source_note,
-    valeur_selectionnee,
 )
 from data import repository as repo
 from data.embedded import RESIDUAL_LIFE_2025, SEX_RATIO
@@ -43,10 +42,6 @@ with col_annee:
     annee_naissance = st.slider("Année de naissance", 1930, 1990, key="annee_naissance")
 
 age_actuel = CURRENT_YEAR - annee_naissance
-valeur_selectionnee(
-    "Génération suivie",
-    f"Né·e en {annee_naissance} — {age_actuel} ans en {CURRENT_YEAR}",
-)
 
 # ---------------------------------------------------------------------------
 # 2. Métriques
@@ -61,7 +56,11 @@ residuelle = interp_survival(
 )
 
 c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric(f"Âge en {CURRENT_YEAR}", f"{age_actuel} ans")
+c1.metric(
+    f"Génération {annee_naissance}",
+    f"{age_actuel} ans",
+    help=f"Âge atteint en {CURRENT_YEAR}",
+)
 c2.metric(
     f"Nés en {annee_naissance} ({SEX_LABELS[sexe].lower()})",
     f"{fr_num(naissances, 0)}",

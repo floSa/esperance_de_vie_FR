@@ -58,7 +58,25 @@ def apply_layout(fig, **kwargs):
     return fig
 
 
+# La valeur affichée au-dessus du curseur est le repère de lecture de la page ;
+# sa taille par défaut la rend illisible à côté des métriques.
+_STYLE_CURSEURS = """
+<style>
+  [data-testid="stSliderThumbValue"] {
+      font-size: 1.35rem !important;
+      font-weight: 700 !important;
+      white-space: nowrap;
+  }
+  /* Dégage la hauteur nécessaire pour que la valeur ne chevauche pas le label. */
+  [data-testid="stSlider"] { padding-top: 1.1rem; }
+  [data-testid="stSliderTickBar"] { font-size: .8rem; opacity: .65; }
+</style>
+"""
+
+
 def render_sidebar():
+    # Appelé par toutes les pages : c'est le point d'injection du style commun.
+    st.markdown(_STYLE_CURSEURS, unsafe_allow_html=True)
     st.sidebar.title("📊 Espérance de vie")
     st.sidebar.caption("France & Europe · INSEE / Eurostat / OWID")
     st.sidebar.markdown("---")
@@ -72,21 +90,6 @@ def render_sidebar():
 def source_note():
     st.markdown("---")
     st.markdown(SOURCE_NOTE)
-
-
-def valeur_selectionnee(libelle: str, valeur: str):
-    """Rappel en gros caractères de ce que le curseur vient de sélectionner.
-
-    La valeur affichée par le curseur Streamlit est trop discrète pour servir
-    de repère de lecture sous le graphique.
-    """
-    st.markdown(
-        f"<div style='margin:.1rem 0 .4rem 0;'>"
-        f"<span style='font-size:.85rem;opacity:.7;'>{libelle}</span><br>"
-        f"<span style='font-size:2rem;font-weight:700;line-height:1.1;'>"
-        f"{valeur}</span></div>",
-        unsafe_allow_html=True,
-    )
 
 
 def note_lecture(lecture: str, source: str | None = None):

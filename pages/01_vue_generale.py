@@ -10,6 +10,7 @@ from common import (
     download_csv,
     fr_num,
     note_lecture,
+    persist,
     render_sidebar,
     source_note,
 )
@@ -18,48 +19,68 @@ from data import repository as repo
 st.set_page_config(page_title="Vue générale · Espérance de vie", page_icon="📈", layout="wide")
 render_sidebar()
 
-serie_e0 = repo.serie_par_sexe(0)
-annee_max = int(serie_e0["year"].max())
-derniere = serie_e0.iloc[-1]
-
-st.title(f"📈 Vue générale — France 1900–{annee_max}")
-
-# ---------------------------------------------------------------------------
-# 1. Métriques
-# ---------------------------------------------------------------------------
-
 longue = repo.esperance_vie_longue()
-e0_1900 = float(longue.loc[longue["year"] == 1900, "esperance"].iloc[0])
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric(f"e₀ femmes {annee_max}", f"{fr_num(derniere['femmes'])} ans")
-c2.metric(f"e₀ hommes {annee_max}", f"{fr_num(derniere['hommes'])} ans")
-c3.metric("Écart F/H", f"{fr_num(derniere['femmes'] - derniere['hommes'])} ans")
-c4.metric(
-    "Gain depuis 1900",
-    f"+{fr_num((derniere['femmes'] + derniere['hommes']) / 2 - e0_1900)} ans",
-    help="Écart entre la moyenne des deux sexes aujourd'hui et l'espérance "
-         "tous sexes confondus de 1900",
-)
+st.title("📈 Vue générale — France")
 
 # ---------------------------------------------------------------------------
-# 2. Évolution
+# 1. Sélection de l'âge
 # ---------------------------------------------------------------------------
 
-INDICATEURS = {
-    "À la naissance": (0, "Espérance de vie à la naissance (ans)"),
-    "À 1 an": (1, "Années restant à vivre à 1 an"),
-    "À 20 ans": (20, "Années restant à vivre à 20 ans"),
-    "À 40 ans": (40, "Années restant à vivre à 40 ans"),
-    "À 60 ans": (60, "Années restant à vivre à 60 ans"),
-    "À 65 ans": (65, "Années restant à vivre à 65 ans"),
-}
-choix = st.radio(
-    "Espérance de vie mesurée…", list(INDICATEURS),
-    horizontal=True, key="indicateur_page1",
+ages = repo.ages_disponibles()
+persist("age_observe", 0)
+age = st.select_slider(
+    "Espérance de vie à l'âge de…",
+    options=ages,
+    format_func=lambda a: "la naissance" if a == 0 else f"{a} ans",
+    key="age_observe",
 )
-age, y_label = INDICATEURS[choix]
+libelle_age = "la naissance" if age == 0 else f"{age} ans"
 serie = repo.serie_par_sexe(age)
+y_label = ("Espérance de vie à la naissance (ans)" if age == 0
+           else f"Années restant à vivre à {age} ans")
+
+# ---------------------------------------------------------------------------
+# 2. Métriques de l'âge sélectionné
+# ---------------------------------------------------------------------------
+
+derniere = serie.iloc[-1]
+premiere = serie.iloc[0]
+an_recent, an_ancien = int(derniere["year"]), int(premiere["year"])
+gain_f = float(derniere["femmes"] - premiere["femmes"])
+
+c1, c2, c3, c4, c5 = st.columns(5)
+c1.metric(
+    "Âge observé",
+    "Naissance" if age == 0 else f"{age} ans",
+    help="Âge sélectionné avec le curseur ci-dessus",
+)
+c2.metric(
+    f"Femmes, {an_recent}",
+    f"{fr_num(derniere['femmes'])} ans",
+    help=f"Années restant à vivre à {libelle_age}",
+)
+c3.metric(f"Hommes, {an_recent}", f"{fr_num(derniere['hommes'])} ans")
+c4.metric("Écart femmes − hommes",
+          f"{fr_num(derniere['femmes'] - derniere['hommes'])} ans")
+c5.metric(
+    f"Gain femmes depuis {an_ancien}",
+    f"+{fr_num(gain_f)} ans",
+    help=f"Première année disponible pour cet âge : {an_ancien}",
+)
+
+if age != 0:
+    st.caption(
+        f"Une femme ayant atteint {age} ans en {an_recent} peut espérer vivre "
+        f"encore **{fr_num(derniere['femmes'])} ans**, soit un décès vers "
+        f"**{fr_num(age + derniere['femmes'], 0)} ans**."
+    )
+
+# ---------------------------------------------------------------------------
+# 3. Évolution
+# ---------------------------------------------------------------------------
+
+annee_max = an_recent
 
 fig = go.Figure()
 
@@ -108,16 +129,27 @@ if age == 0:
         f"{repo.millesime('esperance_vie_fr_insee')}",
     )
 else:
+    exemple = round(float(derniere["femmes"]))
     note_lecture(
         f"L'axe vertical est le nombre d'années qu'il reste à vivre, en moyenne, "
         f"à une personne <strong>déjà âgée de {age} ans</strong>. Ce n'est donc "
-        "pas un âge, mais une durée : lire un point à 28 signifie « encore 28 ans "
-        f"à vivre », soit un décès vers {age + 28} ans."
-        "<br><br>Cette durée ne concerne que les personnes ayant atteint "
-        f"{age} ans. Celles décédées avant n'entrent pas dans le calcul — c'est "
-        f"pourquoi {age} + cette durée dépasse l'espérance de vie à la naissance.",
-        repo.millesime("esperance_vie_fr_65_eurostat") if age == 65
-        else repo.millesime("esperance_vie_fr_insee"),
+        f"pas un âge mais une durée : lire un point à {exemple} signifie "
+        f"« encore {exemple} ans à vivre », soit un décès vers "
+        f"{age + exemple} ans."
+        "<br><br>"
+        f"Cette durée ne concerne que les personnes ayant atteint {age} ans. "
+        "Celles décédées avant n'entrent pas dans le calcul — c'est pourquoi "
+        f"{age} + cette durée dépasse l'espérance de vie à la naissance."
+        "<br><br>"
+        + (
+            f"La série commence en {an_ancien} : l'INSEE publie cet âge depuis "
+            "1946."
+            if age in repo.AGES_INSEE else
+            f"La série commence en {an_ancien}. L'INSEE ne publie que les âges "
+            "0, 1, 20, 40 et 60 ans, qui remontent à 1946 ; tous les autres âges "
+            "viennent d'Eurostat, dont la série française démarre en 1998."
+        ),
+        repo.millesime(repo.source_de_l_age(age)),
     )
 
 # ---------------------------------------------------------------------------

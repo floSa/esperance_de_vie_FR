@@ -221,26 +221,40 @@ def _jsonstat(dataset: str, params: dict) -> tuple[pd.DataFrame, str]:
 
 
 def fetch_eurostat_life_expectancy_fr() -> tuple[pd.DataFrame, dict]:
-    """Espérance de vie à 65 ans, France, par sexe — complète la série INSEE."""
-    params = {"geo": "FR", "age": "Y65", "sex": ["F", "M"]}
+    """Espérance de vie française par sexe, pour **tous les âges** de 0 à 95 ans.
+
+    L'INSEE ne publie que cinq âges (0, 1, 20, 40, 60) mais remonte à 1946 ;
+    Eurostat publie les 96 âges mais seulement depuis 1998. Les deux séries se
+    complètent : profondeur historique d'un côté, finesse par âge de l'autre.
+    """
+    params = {"geo": "FR", "sex": ["F", "M"]}
     df, updated = _jsonstat("demo_mlexpec", params)
+
+    df["age_num"] = pd.to_numeric(
+        df["age"].str.replace("Y_LT1", "0", regex=False)
+                 .str.replace("Y_GE95", "95", regex=False)
+                 .str.removeprefix("Y"),
+        errors="coerce",
+    )
+    df = df.dropna(subset=["age_num", "value"])
 
     out = (df.assign(year=df["time"].astype(int),
                      sexe=df["sex"].map({"F": "femmes", "M": "hommes"}),
-                     age=65)
+                     age=df["age_num"].astype(int))
              .rename(columns={"value": "esperance"})
              [["year", "sexe", "age", "esperance"]]
-             .sort_values(["sexe", "year"])
+             .sort_values(["sexe", "age", "year"])
              .reset_index(drop=True))
 
     return out, {
-        "libelle": "Espérance de vie à 65 ans, France, par sexe",
+        "libelle": "Espérance de vie par sexe et âge exact (0 à 95 ans), France",
         "fournisseur": "Eurostat",
         "jeu": "demo_mlexpec",
         "url": f"{EUROSTAT}/demo_mlexpec",
         "parametres": params,
         "millesime_source": updated,
         "annees": f"{out['year'].min()}–{out['year'].max()}",
+        "ages": f"{out['age'].min()}–{out['age'].max()}",
         "lignes": len(out),
         "extrait_le": _now(),
     }
