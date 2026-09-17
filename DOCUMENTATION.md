@@ -12,8 +12,8 @@ chiffrés** et, surtout, les **limites de représentativité**.
 ## 1. Problème étudié
 
 L'application ne prédit rien : elle **décrit et met en scène** l'évolution de la
-mortalité française et la compare au reste de l'Europe. Quatre questions
-structurent les six pages :
+mortalité française et la compare au reste de l'Europe. Une question par page,
+sept pages :
 
 | Page | Question posée | Indicateur central |
 |---|---|---|
@@ -23,6 +23,7 @@ structurent les six pages :
 | Distribution & variance | Les âges au décès se sont-ils resserrés autour d'un âge élevé ? | Quartiles Q1–Q3, IQR, écart-type |
 | Explorateur de cohorte | Parmi les personnes nées une année donnée, combien sont encore en vie ? | Courbe de survie, effectifs |
 | Survie à un âge donné | À âge constant, la survie s'améliore-t-elle d'une génération à l'autre ? | % vivants à âge fixe |
+| Personnalités | Les personnalités meurent-elles plus âgées que l'ensemble des Français ? | Âge moyen au décès, par sexe et période de 5 ans |
 
 **Vocabulaire démographique manipulé** :
 
@@ -52,7 +53,7 @@ Toutes les données téléchargeables sont **régénérées par script**, jamais
 uv run python -m scripts.refresh_data
 ```
 
-### 2.1 Les six jeux de données
+### 2.1 Les huit jeux de données
 
 | Jeu (`data/sources/`) | Source | Jeu de données | Couverture |
 |---|---|---|---|
@@ -62,8 +63,17 @@ uv run python -m scripts.refresh_data
 | `naissances_fr_insee.csv` | INSEE, API Melodi | `DS_NAISSANCES_FECONDITE_SERIES`, `LVB_PLACE_REG` | 1901–2025 |
 | `distribution_deces_eurostat.csv` | Eurostat | `demo_mlifetable`, `indic_de=NUMBERDYING` (`dx`) | 2014–2024, sexes F/M |
 | `esperance_vie_europe_eurostat.csv` | Eurostat | `demo_mlexpec`, `age=Y_LT1` | dernière année publiée, 41 territoires |
+| `deces_par_age_eurostat.csv` | Eurostat | `demo_magec`, décès enregistrés par âge (100 = 100 ans et plus) | 1986–2024, sexes F/M ; `FX` avant 1998, `FR` ensuite |
+| `deces_personnalites_wikidata.csv` | Wikidata, via le projet `deces_personnalites_FR` | personnes de nationalité française ayant au moins un article Wikipédia | 1990–2025, âge exact au décès |
 
 Aucune de ces sources ne demande de compte ni de clé d'API.
+
+**Les personnalités font exception au rafraîchissement direct.** Leur collecte
+sur Wikidata prend plus d'une demi-heure (le service public coupe toute requête
+au-delà de 60 secondes, les années sont découpées en tranches). Elle vit dans le
+projet voisin `deces_personnalites_FR` ; `refresh_data` en importe le fichier
+consolidé, en ne gardant que les personnes dont l'âge au décès est calculable
+au jour près et dont le sexe est renseigné (27 785 sur 29 560).
 
 ### 2.2 Le manifeste de provenance
 
@@ -197,9 +207,31 @@ La réponse Eurostat est au format **JSON-stat 2.0** : un dictionnaire `value`
 indexé par un entier linéaire. L'index est décodé par calcul des *strides*
 (produits cumulés des tailles de dimensions) pour retrouver le n-uplet de
 dimensions `(geo, sex, age, time, …)`. Le décodeur est générique et sert aux
-trois appels Eurostat du projet. Voir [scripts/sources.py](scripts/sources.py).
+quatre appels Eurostat du projet. Voir [scripts/sources.py](scripts/sources.py).
 
-### 3.6 Authentification HMD
+### 3.6 Comparaison personnalités / population — `comparaison_age_deces`
+
+Pour une période $P$ de 5 ans, un sexe et un âge minimal $a_{\min} = 25$ :
+
+$$\bar{a}_{\text{pop}}(P) = \dfrac{\sum_{t \in P} \sum_{a \geq a_{\min}} a \cdot D_{t,a}}{\sum_{t \in P} \sum_{a \geq a_{\min}} D_{t,a}}$$
+
+où $D_{t,a}$ est le nombre de décès enregistrés l'année $t$ à l'âge $a$
+(Eurostat `demo_magec`). Côté personnalités, simple moyenne des âges exacts au
+décès des personnes mortes pendant $P$, au même âge minimal.
+
+Seules les années couvertes par les deux sources entrent dans le calcul
+(1990–2024) ; `bilan_age_deces` applique le même calcul à toute cette période.
+
+> **Décision** — *Comparer à l'âge au décès des Français morts la même période*
+> **plutôt qu'**à l'espérance de vie, **parce que** les deux côtés décrivent
+> alors la même chose : des décès réels. L'espérance de vie à la naissance
+> décrit une génération fictive et inclut la mortalité infantile.
+
+> **Décision** — *Décès à 25 ans ou plus, des deux côtés*, **parce qu'**on
+> devient rarement célèbre enfant. Garder les décès d'enfants dans la population
+> seule abaisserait artificiellement son âge moyen au décès.
+
+### 3.7 Authentification HMD
 
 HMD n'est **pas** utilisé par défaut, Eurostat fournissant les mêmes quantités
 en accès libre depuis 2014. La fonction `hmd_session()` reste disponible pour
@@ -229,9 +261,13 @@ table de mortalité.
 | Profondeur avant 1946 | OWID, tous sexes confondus | Seule source ouverte continue ; le détail par sexe n'existe pas avant |
 | Survie au-delà de la dernière ancre | `None`, aucune extrapolation | L'extrapolation produisait des valeurs démographiquement impossibles |
 | Espérance résiduelle | Table **du moment** 2025 | Donnée disponible ; l'écran avertit qu'elle **sous-estime** la survie réelle |
-| Couleurs | Palette fixe par entité (femmes `#ec4899`, hommes `#0284c7`, e₀ `#f97316`) | Lecture cohérente entre les six pages ; jamais recyclée |
+| Couleurs | Palette fixe par entité (femmes `#ec4899`, hommes `#0284c7`, e₀ `#f97316`) | Lecture cohérente entre les sept pages ; jamais recyclée |
 | Année courante | Dérivée de `date.today()` | Évite une péremption silencieuse au 1ᵉʳ janvier |
-| Découpage des pages | Une question, une source, une période par page | Une figure mêlant deux périmètres est illisible : c'est ce qui a motivé le passage de quatre à six pages |
+| Personnalités : point de comparaison | Âge au décès des Français morts la même période | Comparer des décès à des décès (§ 3.6) |
+| Personnalités : âge minimal | 25 ans, des deux côtés | Neutraliser la mortalité infantile, absente chez les personnalités |
+| Personnalités : sexe | Toujours séparé | 83 % des personnalités sont des hommes, qui meurent plus jeunes |
+| Personnalités : définition | Au moins un article Wikipédia, toutes langues | Sans ce filtre, un tiers des fiches Wikidata ne sont pas des personnalités publiques |
+| Découpage des pages | Une question, une source, une période par page | Une figure mêlant deux périmètres est illisible : c'est ce qui a motivé le passage de quatre à six, puis sept pages |
 | Axe des années, page « par âge » | Fixé à 1998–2024 quel que soit l'âge | Un axe qui bouge avec le sélecteur rend deux sélections incomparables |
 | Survie au-delà du dernier âge documenté | Affichage borné, écart signalé | Mieux vaut afficher moins que d'inventer une valeur |
 | Sélecteur de sexe | Liste déroulante sur les trois pages concernées | Un seul geste à apprendre |
@@ -270,6 +306,15 @@ Série longue tous sexes confondus (OWID) : **40,1 ans en 1816**, 45,1 en 1900,
   France **83,0 ans**, au-dessus de la **moyenne UE-27 (81,5 ans)** ; en tête
   l'**Espagne (84,0 ans)** puis la **Suède (83,8 ans)**.
 
+| Âge moyen au décès, 1990–2024, décès à 25 ans ou plus | Personnalités | Ensemble | Écart |
+|---|---|---|---|
+| Hommes (22 504 personnalités) | 79,7 ans | 73,6 ans | **+6,1 ans** |
+| Femmes (4 372 personnalités) | 81,9 ans | 81,4 ans | **+0,5 an** |
+
+- **Hommes** : l'écart est stable, entre 5,6 et 6,6 ans selon la période.
+- **Femmes** : pas d'écart réel ; il devient même légèrement négatif sur
+  2015–2024 (−0,2 et −0,3 an).
+
 ---
 
 ## 6. Visualisations
@@ -287,6 +332,7 @@ graphique »** qui explique les axes, le sens d'une variation et le piège
 | Distribution & variance | Bande Q1–Q3 + médiane + e₀, avec repère visuel de la frontière estimé / mesuré ; aire d'évolution de l'IQR |
 | Explorateur de cohorte | Courbe de survie empilée (vivants / décédés cumulés) avec repère de l'âge courant |
 | Survie à un âge donné | Aire du % encore en vie à âge fixe selon l'année d'observation, flèche de progression |
+| Personnalités | Barres groupées par période de 5 ans : âge moyen au décès de l'ensemble (gris) et des personnalités (couleur du sexe) |
 
 Le thème Plotly (`plotly_white` / `plotly_dark`) suit le thème Streamlit courant
 (`apply_layout`). Chaque page propose un export **CSV** (`download_csv`).
@@ -297,8 +343,9 @@ Le thème Plotly (`plotly_white` / `plotly_dark`) suit le thème Streamlit coura
 
 ```text
 APIs publiques ──► scripts/refresh_data.py ──► data/sources/*.csv + manifest.json
-(INSEE, Eurostat,                                        │
- Our World in Data)                                      ▼
+(INSEE, Eurostat,          ▲                             │
+ Our World in Data)        │                             ▼
+Wikidata ──► projet deces_personnalites_FR (collecte longue, import du CSV)
                                               data/repository.py
                                                          │
                      data/embedded.py ───────────────────┤
@@ -344,6 +391,16 @@ APIs publiques ──► scripts/refresh_data.py ──► data/sources/*.csv + 
 - **Espérance de vie par âge limitée à 1998** : Eurostat, seule source couvrant
   les 96 âges, ne remonte pas plus loin. Les onze âges de 85 à 95 ans ne
   commencent même qu'en 2014.
+- **Personnalités, biais de sélection** : un écart d'âge au décès ne prouve pas
+  que la célébrité fait vivre plus longtemps. Vivre longtemps laisse le temps de
+  devenir connu ; les personnalités sont aussi en moyenne plus diplômées et plus
+  aisées, deux facteurs qui allongent la vie par eux-mêmes.
+- **Personnalités, définition** : « française » au sens de la nationalité
+  Wikidata, doubles nationaux inclus ; « personnalité » au sens d'au moins un
+  article Wikipédia. La complétude dépend des contributeurs, et les décès les
+  plus récents sont sous-représentés.
+- **Population, rupture de périmètre en 1998** : France métropolitaine avant,
+  France entière ensuite. Les DOM pèsent environ 2 % des décès.
 - **Millésime figé** : les données ne sont à jour que du dernier
   `refresh_data` — date d'extraction consultable dans le manifeste et affichée
   sous chaque graphique.
@@ -368,7 +425,7 @@ APIs publiques ──► scripts/refresh_data.py ──► data/sources/*.csv + 
 ```bash
 uv run ruff check .                     # lint
 uv run pytest -q                        # invariants démographiques
-uv run python scripts/check_pages.py    # rendu des 7 pages
+uv run python scripts/check_pages.py    # rendu des 8 pages
 ```
 
 Les tests de [tests/test_survie_cohorte.py](tests/test_survie_cohorte.py) portent
@@ -381,6 +438,12 @@ du curseur.
 
 Ce sont ces invariants qui ont mis au jour le creux de survie artificiel des
 générations 1963–1967, et deux ancres corrompues de la génération 1965.
+
+Les tests de
+[tests/test_comparaison_personnalites.py](tests/test_comparaison_personnalites.py)
+verrouillent la méthode de la page Personnalités sur des données synthétiques :
+même seuil d'âge des deux côtés, moyenne de la population pondérée par les
+décès, période limitée aux années communes, sexes séparés.
 
 La CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) exécute les trois
 commandes ci-dessus à chaque push et chaque pull request.

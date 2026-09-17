@@ -1,6 +1,6 @@
 # Espérance de vie — France & Europe
 
-**Application Streamlit multi-pages qui analyse l'espérance de vie en France (1816–2025) et la compare au reste de l'Europe, à partir des séries publiques de l'INSEE, d'Eurostat et d'Our World in Data.**
+**Application Streamlit multi-pages qui analyse l'espérance de vie en France (1816–2025) et la compare au reste de l'Europe, à partir des séries publiques de l'INSEE, d'Eurostat, d'Our World in Data et de Wikidata.**
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![uv](https://img.shields.io/badge/uv-package_manager-DE5FE9?logo=uv&logoColor=white)
@@ -36,6 +36,13 @@ consignant l'URL exacte, les paramètres de requête, le millésime déclaré pa
 fournisseur et la date d'extraction. Le diff Git de ces fichiers est la trace de
 ce qui a bougé d'un rafraîchissement à l'autre.
 
+**Exception : les personnalités.** Leur collecte sur Wikidata prend plus d'une
+demi-heure. Elle vit dans le projet voisin
+`deces_personnalites_FR` (dossier voisin de celui-ci), et `refresh_data`
+importe son fichier consolidé (chemin modifiable avec `--personnalites`).
+Pour les mettre à jour : relancer d'abord la collecte là-bas, puis
+`refresh_data` ici.
+
 ## D'où viennent les données
 
 | Jeu | Source | Accès | Couverture |
@@ -46,6 +53,8 @@ ce qui a bougé d'un rafraîchissement à l'autre.
 | Naissances vivantes annuelles | INSEE — `DS_NAISSANCES_FECONDITE_SERIES` (`LVB_PLACE_REG`) | Ouvert | 1901–2025 |
 | Distribution des âges au décès (`dx` → quartiles) | Eurostat — `demo_mlifetable` | Ouvert | 2014–2024 |
 | Comparaison européenne | Eurostat — `demo_mlexpec` | Ouvert | dernière année publiée |
+| Décès enregistrés par âge et sexe | Eurostat — `demo_magec` | Ouvert | 1990–2024 (métropole jusqu'en 1997) |
+| Personnalités françaises décédées | Wikidata, via `deces_personnalites_FR` | Ouvert (CC0) | 1990–2025 |
 
 Le périmètre géographique retenu est la **France métropolitaine**, constant sur
 toute la profondeur historique — « France entière » intègre les DOM à partir de
@@ -70,6 +79,7 @@ flowchart LR
     euro[Eurostat]
     owid[Our World in Data]
   end
+  wd[Wikidata] --> collecte[projet voisin<br/>deces_personnalites_FR]
   refresh[scripts/refresh_data.py]
   csv[(data/sources/<br/>CSV + manifest.json)]
   repo[data/repository.py]
@@ -77,16 +87,20 @@ flowchart LR
   common[common.py<br/>interpolation · palette · thème]
   subgraph Pages
     p1[Vue générale]
-    p2[Distribution & variance]
-    p3[Explorateur de cohorte]
-    p4[Survie à un âge donné]
+    p2[Espérance de vie par âge]
+    p3[Comparaison européenne]
+    p4[Distribution & variance]
+    p5[Explorateur de cohorte]
+    p6[Survie à un âge donné]
+    p7[Personnalités]
   end
   insee & euro & owid --> refresh --> csv --> repo --> common
+  collecte --> refresh
   emb --> common
-  common --> p1 & p2 & p3 & p4
+  common --> p1 & p2 & p3 & p4 & p5 & p6 & p7
 ```
 
-## Les six vues
+## Les sept vues
 
 Une question par page, une source, une période. C'est la règle qui structure
 l'application : mélanger deux périmètres dans une même figure rendait les
@@ -100,6 +114,7 @@ graphiques illisibles.
 | **Distribution & variance** | À quel âge meurt-on, et cet âge s'est-il resserré ? | Eurostat + estimations | 1900–2024 |
 | **Explorateur de cohorte** | Parmi les personnes nées une année donnée, combien sont encore en vie ? | Estimations ±5 % | générations 1930–1990 |
 | **Survie à un âge donné** | À âge constant, la survie progresse-t-elle d'une génération à l'autre ? | Estimations ±5 % | générations 1930–1990 |
+| **Personnalités** | Les personnalités meurent-elles plus âgées que l'ensemble des Français ? | Wikidata + Eurostat | 1990–2024 |
 
 Chaque graphique porte une note **« Comment lire ce graphique »**. Les
 graphiques sont générés à la volée par Plotly (thème clair/sombre suivant
@@ -113,10 +128,13 @@ Streamlit) ; chaque page propose un export CSV.
 | Quartiles des âges au décès | Calculés sur `dx` de la table de mortalité Eurostat | Densité directe des âges au décès, sans compte HMD |
 | Série longue avant 1946 | OWID, tous sexes confondus | Seule source ouverte continue ; le détail par sexe n'existe pas avant 1946 |
 | Survie de génération hors plage | Valeur de la dernière génération ayant atteint cet âge | Extrapoler produisait une survie qui remontait avec l'âge |
-| Couleurs | Palette fixe par entité (femmes rose, hommes bleu, e₀ orange) | Lecture cohérente entre les six pages |
+| Couleurs | Palette fixe par entité (femmes rose, hommes bleu, e₀ orange) | Lecture cohérente entre les sept pages |
 | Découpage des pages | Une question, une source, une période par page | Une figure mêlant deux périmètres est illisible |
 | Axe des années, page « par âge » | Fixé à 1998–2024 quel que soit l'âge | Un axe qui bouge avec le sélecteur rend deux sélections incomparables |
 | Survie au-delà de 95 ans | Affichage borné au dernier âge documenté, écart signalé | Mieux vaut afficher moins que d'inventer une valeur |
+| Point de comparaison des personnalités | Âge au décès de tous les Français morts la même période, pas l'espérance de vie | Comparer des décès à des décès ; l'espérance de vie décrit une génération fictive |
+| Âge minimal, page Personnalités | Décès à 25 ans ou plus, des deux côtés | On devient rarement célèbre enfant : garder les décès d'enfants rajeunirait artificiellement la population |
+| Sexe, page Personnalités | Toujours séparé | 83 % des personnalités sont des hommes, qui meurent plus jeunes |
 
 ## Résultats clés
 
@@ -133,13 +151,18 @@ Streamlit) ; chaque page propose un export CSV.
   femmes, dix-sept pour les hommes.
 - **Europe (Eurostat 2024)** : France **83,0 ans**, au-dessus de la moyenne
   **UE-27 (81,5 ans)** ; en tête l'Espagne (**84,0 ans**) puis la Suède (83,8).
+- **Personnalités (1990–2024, décès à 25 ans ou plus)** : les hommes célèbres
+  meurent en moyenne **6,1 ans plus tard** que l'ensemble des Français (79,7
+  contre 73,6 ans), un écart stable sur toute la période. Chez les femmes, **pas
+  d'écart réel** (81,9 contre 81,4 ans). Ce n'est pas une preuve que la
+  célébrité protège : vivre longtemps aide à devenir connu.
 
 ## Structure
 
 ```
 ├── app.py                        # point d'entrée Streamlit
 ├── common.py                     # palette, thème Plotly, survie de génération
-├── pages/                        # les six vues (une question par page)
+├── pages/                        # les sept vues (une question par page)
 ├── data/
 │   ├── repository.py             # accès aux données générées
 │   ├── sources/                  # CSV + manifest.json (régénérés)
@@ -148,7 +171,7 @@ Streamlit) ; chaque page propose un export CSV.
 ├── scripts/
 │   ├── sources.py                # un fetcher par source, avec provenance
 │   ├── refresh_data.py           # régénère data/sources/
-│   └── check_pages.py            # rend les 7 pages et détecte les erreurs
+│   └── check_pages.py            # rend les 8 pages et détecte les erreurs
 └── tests/                        # invariants démographiques
 ```
 
@@ -157,7 +180,7 @@ Streamlit) ; chaque page propose un export CSV.
 ```bash
 uv run ruff check .                     # lint
 uv run pytest -q                        # invariants démographiques
-uv run python scripts/check_pages.py    # rendu des 7 pages
+uv run python scripts/check_pages.py    # rendu des 8 pages
 ```
 
 Les tests vérifient des propriétés qui doivent tenir quelles que soient les
@@ -171,6 +194,8 @@ creux de survie artificiel entre les générations 1963 et 1967.
 - INSEE — [API Melodi](https://api.insee.fr/melodi/), séries longues décès et naissances
 - Eurostat — [`demo_mlexpec`](https://ec.europa.eu/eurostat/databrowser/view/demo_mlexpec), [`demo_mlifetable`](https://ec.europa.eu/eurostat/databrowser/view/demo_mlifetable)
 - Our World in Data — [life expectancy](https://ourworldindata.org/life-expectancy), d'après la Human Mortality Database
+- Eurostat — [`demo_magec`](https://ec.europa.eu/eurostat/databrowser/view/demo_magec), décès par âge et sexe
+- Wikidata — personnalités décédées, via le projet `deces_personnalites_FR`
 - Wilmoth & Horiuchi (1999), Robine (2001) — compression de la mortalité
 
 ## Licences
