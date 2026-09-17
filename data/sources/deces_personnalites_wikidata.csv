@@ -22,6 +22,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 1990,femmes,95,1894,Francine Benoît,5,Q3081188
 1990,femmes,80,1909,Francine Lazurick,1,Q3081220
 1990,femmes,72,1917,Françoise Delille,2,Q27051010
+1990,femmes,80,1909,Geneviève Prigent,5,Q75394738
 1990,femmes,86,1904,Geneviève Vankiersbilck,1,Q65660791
 1990,femmes,88,1901,Georgette Paul,2,Q47843636
 1990,femmes,50,1939,Gina Pane,14,Q267845
@@ -79,7 +80,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 1990,femmes,88,1902,Yvonne Hébert,3,Q3574201
 1990,femmes,90,1899,Édith Follet,1,Q3579176
 1990,femmes,92,1897,Élise Rieuf,2,Q3587959
-1990,hommes,60,1929,Abbès Moulessehoul,2,Q19629427
+1990,hommes,69,1920,Abbès Moulessehoul,2,Q19629427
 1990,hommes,75,1914,Abderrahmane Nekli,3,Q2821265
 1990,hommes,82,1907,Adolphe Touffait,7,Q2824922
 1990,hommes,83,1907,Adrien Gand,2,Q2825175
@@ -362,7 +363,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 1990,hommes,42,1947,Jean-Pierre Imbach,1,Q3169412
 1990,hommes,46,1943,Jean-Pierre Velly,3,Q3169810
 1990,hommes,84,1905,Joseph Choy,2,Q3184758
-1990,hommes,87,1903,Joseph Dehergne,2,Q17057616
+1990,hommes,86,1903,Joseph Dehergne,2,Q17057616
 1990,hommes,45,1945,Joseph Doucé,6,Q2386899
 1990,hommes,79,1911,Joseph Garat,3,Q3184987
 1990,hommes,72,1918,Joseph Jadrejak,9,Q540601
@@ -608,7 +609,6 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 1991,femmes,77,1914,Eva Lallemant,4,Q3061256
 1991,femmes,76,1914,Françoise Lugagne,6,Q3086543
 1991,femmes,82,1909,Françoise Mézières,5,Q3086565
-1991,femmes,71,1919,Geneviève Prigent,5,Q75394738
 1991,femmes,96,1894,Germaine Degrond,4,Q3104174
 1991,femmes,90,1900,Ghislaine Dommanget,17,Q252519
 1991,femmes,81,1909,Gilberte Messmer,1,Q139947679
@@ -1283,12 +1283,12 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 1992,hommes,80,1912,Amédée Fournier,15,Q129066
 1992,hommes,74,1918,André Barreau,1,Q27064218
 1992,hommes,79,1912,André Beuzebosc,2,Q19951862
-1992,hommes,90,1901,André Cerbonney,5,Q27043781
+1992,hommes,91,1900,André Cerbonney,5,Q27043781
 1992,hommes,79,1913,André Dubois-Chabert,1,Q50843378
 1992,hommes,78,1913,André Glon,1,Q18744754
 1992,hommes,66,1925,André Gravelle,1,Q2847883
 1992,hommes,95,1896,André Guillon,2,Q2847901
-1992,hommes,97,1894,André Hébuterne,6,Q519803
+1992,hommes,99,1892,André Hébuterne,6,Q519803
 1992,hommes,87,1904,André Jacquemin,3,Q2847983
 1992,hommes,91,1900,André Lancelot,3,Q56248642
 1992,hommes,79,1913,André Lavergne,2,Q2848107
@@ -2066,7 +2066,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 1993,hommes,81,1911,Jean Baridon,1,Q3170604
 1993,hommes,92,1901,Jean Barville,1,Q63374739
 1993,hommes,67,1925,Jean Cau,20,Q2455700
-1993,hommes,86,1907,Jean Chasson,3,Q52829356
+1993,hommes,87,1906,Jean Chasson,3,Q52829356
 1993,hommes,86,1906,Jean Chevalier,3,Q6170427
 1993,hommes,69,1924,Jean Collin,1,Q3171384
 1993,hommes,97,1895,Jean Cournot,1,Q55418279
@@ -2545,7 +2545,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 1994,hommes,66,1928,Claude Orrieux,1,Q115679898
 1994,hommes,82,1911,Claude Sainval,4,Q2978115
 1994,hommes,30,1964,Cleews Vellay,2,Q2978768
-1994,hommes,76,1918,Cyrille Argenti,2,Q104725535
+1994,hommes,75,1918,Cyrille Argenti,2,Q104725535
 1994,hommes,86,1908,Dan Solojoff,1,Q3013209
 1994,hommes,82,1911,Daniel Georges,1,Q19631076
 1994,hommes,84,1910,Daniel Tinayre,11,Q4457812
@@ -2810,7 +2810,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 1994,hommes,86,1908,Michel Lauri,16,Q3107352
 1994,hommes,84,1910,Michel Liphschutz,2,Q6836469
 1994,hommes,73,1920,Michel Sordel,1,Q3310879
-1994,hommes,78,1915,Michel Vitold,9,Q3311088
+1994,hommes,79,1914,Michel Vitold,9,Q3311088
 1994,hommes,45,1949,Miloud Hadefi,8,Q3314460
 1994,hommes,42,1952,Mohamed Griche,2,Q29860396
 1994,hommes,49,1945,Mohamed Hassaïne,3,Q106255190
@@ -3368,7 +3368,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 1995,hommes,91,1903,Jean Tardieu,19,Q561201
 1995,hommes,70,1924,Jean Thierry,1,Q12349750
 1995,hommes,67,1927,Jean Thureau,1,Q41557708
-1995,hommes,76,1919,Jean Tourniac,1,Q3174828
+1995,hommes,83,1912,Jean Tourniac,1,Q3174828
 1995,hommes,74,1920,Jean Valnet,4,Q3174946
 1995,hommes,84,1911,Jean Venitien,1,Q43139476
 1995,hommes,71,1923,Jean Verlhac,1,Q3175008
@@ -4463,7 +4463,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 1997,hommes,48,1949,Bernard Grobot,2,Q110646229
 1997,hommes,68,1929,Bernard Lathière,3,Q2898184
 1997,hommes,72,1924,Bernard Legrand,1,Q2898220
-1997,hommes,94,1902,Bernard Lenoble,4,Q2898232
+1997,hommes,95,1902,Bernard Lenoble,4,Q2898232
 1997,hommes,77,1920,Bernard Pierre,3,Q16750342
 1997,hommes,66,1931,Bernard Revon,2,Q2898517
 1997,hommes,74,1922,Bernard-Claude Savy,3,Q2897398
@@ -5014,7 +5014,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 1998,hommes,83,1914,Abderrazak Abdelkader,2,Q104971143
 1998,hommes,84,1913,Adolphe Ferrigno,1,Q124363067
 1998,hommes,89,1908,Adrien Spinetta,2,Q2825267
-1998,hommes,59,1939,Agustín Gómez-Arcos,7,Q2740907
+1998,hommes,65,1933,Agustín Gómez-Arcos,7,Q2740907
 1998,hommes,60,1937,Ahmed Oudjani,15,Q368069
 1998,hommes,91,1906,Ahmed Rafa,1,Q2827641
 1998,hommes,78,1919,Alain Bosquet,17,Q2472632
@@ -6515,6 +6515,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2000,hommes,87,1912,Herbert Peppere,3,Q18223409
 2000,hommes,79,1921,Hervé Le Boterf,4,Q523855
 2000,hommes,55,1945,Hervé Mathieu-Bachelot,2,Q3134589
+2000,hommes,83,1916,Hubert Maga,43,Q336242
 2000,hommes,73,1926,Hubert Saint Girons,2,Q55597238
 2000,hommes,80,1919,Igor Correa Luna,3,Q3148273
 2000,hommes,50,1950,Igwal,1,Q3148352
@@ -7398,7 +7399,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2001,hommes,68,1933,Marcel Vigreux,1,Q3289475
 2001,hommes,96,1905,Marcellin Cazals,1,Q55672697
 2001,hommes,56,1945,Mario Santini,1,Q3293560
-2001,hommes,93,1907,Marius Gallottini,5,Q3849375
+2001,hommes,96,1904,Marius Gallottini,5,Q3849375
 2001,hommes,74,1926,Martial Taugourdeau,2,Q3295275
 2001,hommes,90,1910,Mathieu Matégot,4,Q6787216
 2001,hommes,83,1917,Maurice Arreckx,5,Q3300337
@@ -7733,7 +7734,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2002,hommes,78,1924,André Figueras,1,Q2847753
 2002,hommes,83,1919,André Frey,8,Q2847783
 2002,hommes,98,1904,André Gutton,5,Q2847917
-2002,hommes,79,1922,André Jacowski,5,Q519860
+2002,hommes,80,1921,André Jacowski,5,Q519860
 2002,hommes,90,1912,André Laroze,1,Q139915738
 2002,hommes,62,1939,André Renoux,1,Q2848515
 2002,hommes,97,1904,André Sicard,1,Q71390406
@@ -7890,7 +7891,6 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2002,hommes,91,1910,Henryk Jerzy Szcześniewski,2,Q105662180
 2002,hommes,95,1906,Hilaire du Berrier,4,Q5760738
 2002,hommes,80,1922,Hippolyte Brun,1,Q3136033
-2002,hommes,85,1916,Hubert Maga,43,Q336242
 2002,hommes,88,1913,Idebert Exbrayat,1,Q65096170
 2002,hommes,79,1922,Ivan Desny,16,Q66380
 2002,hommes,61,1940,Jacky Toublet,1,Q15406996
@@ -10408,7 +10408,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2006,femmes,99,1906,Lita Recio,2,Q3256523
 2006,femmes,81,1925,Luce Aubertin,1,Q24641784
 2006,femmes,60,1946,Lucile Négel,1,Q107985928
-2006,femmes,96,1909,Lydia Ouspensky,2,Q18187686
+2006,femmes,99,1906,Lydia Ouspensky,2,Q18187686
 2006,femmes,78,1928,Madeleine Delavaivre,3,Q99677749
 2006,femmes,95,1910,Madeleine Guilbert,1,Q3275661
 2006,femmes,85,1920,Madeleine Loux,1,Q113815267
@@ -11154,7 +11154,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2007,femmes,98,1908,Mathilde Carré,9,Q3298950
 2007,femmes,67,1939,Maïa Simon,2,Q3303389
 2007,femmes,83,1924,Mireille Albrecht,2,Q21069334
-2007,femmes,75,1932,Mona Beaumont,2,Q110972272
+2007,femmes,80,1927,Mona Beaumont,2,Q110972272
 2007,femmes,97,1910,Monique Cras,1,Q67503070
 2007,femmes,92,1914,Nell Pierlain,1,Q106096786
 2007,femmes,80,1926,Nicole Anouilh,2,Q3340995
@@ -11941,8 +11941,8 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2008,hommes,94,1913,Adam Rayski,5,Q2823996
 2008,hommes,89,1918,Adolphe Pacault,2,Q2824884
 2008,hommes,77,1930,Adrien Finck,3,Q377038
-2008,hommes,85,1923,Ahmed Labidi,5,Q2827507
-2008,hommes,76,1932,Ahmed Malek,3,Q2827616
+2008,hommes,86,1922,Ahmed Labidi,5,Q2827507
+2008,hommes,77,1931,Ahmed Malek,3,Q2827616
 2008,hommes,94,1913,Aimé Césaire,51,Q223955
 2008,hommes,93,1914,Aimé Teisseire,3,Q2828092
 2008,hommes,71,1936,Alain Ayache,4,Q2829523
@@ -14589,7 +14589,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2011,hommes,96,1914,Gaston Grimbert,4,Q101152422
 2011,hommes,87,1923,Gaston Tuaillon,5,Q16657504
 2011,hommes,94,1916,Gaston Watkin,2,Q3099191
-2011,hommes,98,1913,George Whitman,6,Q4352670
+2011,hommes,97,1913,George Whitman,6,Q4352670
 2011,hommes,85,1925,Georges Ben Amar,1,Q3102262
 2011,hommes,70,1940,Georges Cazes,2,Q15974235
 2011,hommes,90,1921,Georges Condominas,8,Q1387626
@@ -16620,7 +16620,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2013,hommes,75,1937,Mustapha Toumi,6,Q15993467
 2013,hommes,35,1977,Nathanaël Dupré La Tour,1,Q15407342
 2013,hommes,89,1923,Nguyen Dinh Thuan,4,Q7022807
-2013,hommes,96,1916,Nikołaj Rutycz,2,Q4401199
+2013,hommes,97,1916,Nikołaj Rutycz,2,Q4401199
 2013,hommes,56,1956,Noureddine Drâa,1,Q21512493
 2013,hommes,88,1924,Noël Lee,8,Q3345857
 2013,hommes,79,1933,Noël Monier,1,Q3345859
@@ -17664,7 +17664,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2014,hommes,87,1926,Serge Bouillon,1,Q3479216
 2014,hommes,86,1927,Serge Gut,4,Q16266889
 2014,hommes,87,1926,Serge Markó,1,Q3479430
-2014,hommes,88,1926,Serge Moscovici,19,Q527522
+2014,hommes,89,1925,Serge Moscovici,19,Q527522
 2014,hommes,93,1920,Serge Perrault,2,Q3479487
 2014,hommes,53,1961,Serge Tribolet,1,Q16027748
 2014,hommes,100,1914,Shmouel Errera,1,Q3482416
@@ -18583,7 +18583,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2015,hommes,89,1925,Émile Besson,1,Q3588347
 2015,hommes,89,1926,Émile Larre,2,Q3588603
 2015,hommes,84,1930,Éric Jourdan,7,Q1980665
-2015,hommes,87,1927,Éric Ollivier,3,Q3591299
+2015,hommes,88,1926,Éric Ollivier,3,Q3591299
 2015,hommes,88,1926,Éric Rouleau,5,Q3591337
 2015,hommes,96,1918,Étienne Bierry,6,Q3592065
 2016,femmes,99,1917,Alice Garrigoux,1,Q28723376
@@ -18794,6 +18794,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2016,hommes,85,1930,André Villers,4,Q2848782
 2016,hommes,92,1924,André Vuillien,1,Q15970394
 2016,hommes,79,1936,André Warusfel,3,Q2848804
+2016,hommes,88,1927,André-Paul Weber,2,Q21033310
 2016,hommes,89,1927,Angelo Di Marco,2,Q2849458
 2016,hommes,79,1936,Ansoumane Doré,2,Q2852521
 2016,hommes,86,1930,Antoine Battesti,2,Q2853652
@@ -19288,7 +19289,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2016,hommes,66,1949,Patrick Facon,1,Q20240994
 2016,hommes,65,1951,Patrick Favardin,1,Q3369434
 2016,hommes,71,1944,Patrick Floersheim,2,Q3369446
-2016,hommes,66,1949,Patrick Volson,2,Q3369932
+2016,hommes,71,1944,Patrick Volson,2,Q3369932
 2016,hommes,81,1935,Patrick de Laubier,2,Q16669203
 2016,hommes,96,1919,Paul Augustin Aïzpiri,3,Q16162086
 2016,hommes,84,1932,Paul Cassagnau,3,Q27957401
@@ -20620,7 +20621,6 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2018,hommes,86,1931,André S. Labarthe,15,Q2848599
 2018,hommes,91,1927,André Tarallo,2,Q2848687
 2018,hommes,88,1929,André Touret,1,Q22102092
-2018,hommes,90,1927,André-Paul Weber,2,Q21033310
 2018,hommes,84,1934,Ange Roussel,2,Q18213954
 2018,hommes,93,1924,Angelico Surchamp,1,Q2849406
 2018,hommes,93,1924,Antoine Culioli,7,Q677653
@@ -21143,7 +21143,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2018,hommes,85,1932,Paul-Louis Thirard,1,Q16266412
 2018,hommes,87,1930,Peter H. Dailey,3,Q29583384
 2018,hommes,78,1939,Peter Mayle,19,Q531759
-2018,hommes,84,1933,Peter Wyngarde,16,Q705901
+2018,hommes,90,1927,Peter Wyngarde,16,Q705901
 2018,hommes,69,1949,Philippe Arnaud,2,Q3379238
 2018,hommes,72,1946,Philippe Besombes,2,Q15708614
 2018,hommes,76,1941,Philippe Boucher,1,Q3379396
@@ -22527,7 +22527,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2020,hommes,86,1933,Claude-Gérard Marcus,7,Q2976717
 2020,hommes,79,1941,Coco Hotahota,8,Q87399318
 2020,hommes,88,1931,Constantin Xenakis,8,Q2995035
-2020,hommes,101,1919,Cyril Arnstam,4,Q97659025
+2020,hommes,101,1918,Cyril Arnstam,4,Q97659025
 2020,hommes,50,1970,Cyril Colbeau-Justin,5,Q3008987
 2020,hommes,42,1977,Cédric Chouviat,1,Q81624794
 2020,hommes,68,1952,Daniel Bellec,1,Q97292922
@@ -22777,7 +22777,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2020,hommes,95,1925,Jean Cabannes,3,Q3171077
 2020,hommes,90,1930,Jean Cardot,8,Q3171130
 2020,hommes,97,1922,Jean Civatte,1,Q113533012
-2020,hommes,81,1938,Jean Clausse,3,Q20089286
+2020,hommes,83,1936,Jean Clausse,3,Q20089286
 2020,hommes,96,1923,Jean Cluzel,6,Q2366062
 2020,hommes,88,1932,Jean Collet,3,Q3171383
 2020,hommes,78,1942,Jean Costil,2,Q104243890
@@ -23238,7 +23238,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2020,hommes,71,1949,Rémi Brissiaud,1,Q87747199
 2020,hommes,93,1926,Rémy Arnod-Prin,2,Q65615803
 2020,hommes,89,1931,Salah Beddiaf,1,Q3469511
-2020,hommes,90,1929,Salah Stétié,8,Q3469546
+2020,hommes,91,1928,Salah Stétié,8,Q3469546
 2020,hommes,47,1973,Samuel Paty,8,Q100451506
 2020,hommes,86,1934,Santé Marcuzzi,2,Q50363174
 2020,hommes,91,1929,Savin Couëlle,3,Q3474553
@@ -24385,7 +24385,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2022,femmes,93,1929,Hélène Plemiannikov,2,Q23950563
 2022,femmes,90,1932,Hélène Roussel,6,Q3144853
 2022,femmes,74,1947,Hélène de Monferrand,9,Q2744164
-2022,femmes,58,1963,Hélène de Saint-Père,7,Q2397207
+2022,femmes,62,1960,Hélène de Saint-Père,7,Q2397207
 2022,femmes,91,1930,Irina Ionesco,14,Q462444
 2022,femmes,107,1914,Irma Mico,4,Q55597287
 2022,femmes,113,1909,Iréna Martial,1,Q110521563
@@ -24744,7 +24744,7 @@ year,sexe,age,annee_naissance,nom,nb_editions_wikipedia,wikidata_id
 2022,hommes,86,1935,Guy-Rachel Grataloup,1,Q3121488
 2022,hommes,102,1920,Géo Beuf,2,Q3123224
 2022,hommes,81,1940,Gérald Ducimetière,4,Q27758152
-2022,hommes,80,1942,Gérard Bonal,2,Q3123775
+2022,hommes,81,1941,Gérard Bonal,2,Q3123775
 2022,hommes,88,1934,Gérard Chouchan,3,Q1558954
 2022,hommes,69,1952,Gérard Drouot,3,Q3123917
 2022,hommes,81,1940,Gérard Fussman,5,Q3123973

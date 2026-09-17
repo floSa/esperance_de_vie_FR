@@ -417,12 +417,12 @@ def fetch_eurostat_deaths_by_age() -> tuple[pd.DataFrame, dict]:
 
 
 def import_personnalites(chemin: Path) -> tuple[pd.DataFrame, dict]:
-    """Décès de personnalités françaises, produits par le projet de collecte Wikidata.
+    """Décès de personnalités françaises, issus de la collecte Wikidata.
 
-    La collecte prend une demi-heure et plus : elle vit dans son propre projet
-    (`deces_personnalites_FR`). Ce projet-ci n'en importe que les colonnes
-    utiles à la comparaison, et ne garde que les âges calculés sur des dates
-    connues au jour près.
+    La collecte prend plus d'une demi-heure et se lance à part
+    (`scripts/collecte_personnalites.py`). L'import ne garde que les colonnes
+    utiles à la comparaison et les âges calculés sur des dates connues au jour
+    près.
     """
     if not chemin.exists():
         raise SourceError(f"{chemin} absent — lancez d'abord la collecte Wikidata")
@@ -445,7 +445,7 @@ def import_personnalites(chemin: Path) -> tuple[pd.DataFrame, dict]:
 
     return out, {
         "libelle": "Décès de personnalités de nationalité française (âge exact connu)",
-        "fournisseur": "Wikidata, via le projet deces_personnalites_FR",
+        "fournisseur": "Wikidata",
         "jeu": chemin.name,
         "url": "https://query.wikidata.org/sparql",
         "parametres": {"filtre": "âge au décès calculable au jour près, sexe femme ou homme"},

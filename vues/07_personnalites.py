@@ -32,9 +32,8 @@ try:
     repo.deces_population()
 except DonneesManquantes as e:
     st.error(
-        f"Données manquantes : {e}\n\nLa liste des personnalités provient du projet "
-        "`deces_personnalites_FR`. Lancer sa collecte, puis "
-        "`uv run python -m scripts.refresh_data` dans ce projet."
+        f"Données manquantes : {e}\n\nLancer `uv run python -m "
+        "scripts.collecte_personnalites`, puis `uv run python -m scripts.refresh_data`."
     )
     st.stop()
 
