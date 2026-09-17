@@ -180,109 +180,89 @@ st.caption(
     "elles n'ont pas d'âge prédit et ne figurent pas ici."
 )
 
-# --- Nuage : toutes les personnalités, un point par naissance × décès --------
+# --- Nuage : toutes les personnalités, par année de décès --------------------
 
-VERT, ROUGE = "#16a34a", "#dc2626"
+VERT, ROUGE, GRIS_POINT = "#16a34a", "#dc2626", "#94a3b8"
 
 points = repo.points_personnalites(sexe, p_debut, p_fin)
-predit = repo.age_predit_par_naissance(sexe)
-reference = repo.age_moyen_population_par_naissance(sexe, p_debut, p_fin)
-moyenne_pers = repo.age_moyen_personnalites_par_naissance(sexe, p_debut, p_fin)
-n_min, n_max = int(points["annee_naissance"].min()), int(points["annee_naissance"].max())
-predit = predit[predit["annee_naissance"].between(n_min, n_max)]
-reference = reference[reference["annee_naissance"].between(n_min, n_max)]
-ZONE = "rgba(100, 116, 139, 0.22)"
-AGE_MAX_AXE = max(110, int(points["age"].max()) + 3)
+lignes_annee = repo.age_moyen_par_annee_deces(sexe, p_debut, p_fin)
 
 fig_n = go.Figure()
-# Zones hors fenêtre d'observation : une génération n'apparaît qu'à travers ses
-# décès survenus entre p_debut et p_fin.
-naissances = np.arange(n_min - 1, n_max + 2)
-fig_n.add_trace(go.Scatter(
-    x=np.concatenate([naissances, naissances[::-1]]),
-    y=np.concatenate([np.clip(p_debut - naissances, AGE_PREDICTION, AGE_MAX_AXE),
-                      np.full(len(naissances), AGE_PREDICTION)]),
-    fill="toself", fillcolor=ZONE, line=dict(width=0),
-    name="Hors de la période observée", hoverinfo="skip", legendgroup="hors",
-))
-fig_n.add_trace(go.Scatter(
-    x=np.concatenate([naissances, naissances[::-1]]),
-    y=np.concatenate([np.clip(p_fin - naissances, AGE_PREDICTION, AGE_MAX_AXE),
-                      np.full(len(naissances), AGE_MAX_AXE)]),
-    fill="toself", fillcolor=ZONE, line=dict(width=0),
-    name="Hors de la période observée", hoverinfo="skip", showlegend=False,
-    legendgroup="hors",
-))
-for nom_trace, masque, couleur in ((f"{mort.capitalize()}s après l'âge prédit", points["ecart"] > 0, VERT),
-                                   (f"{mort.capitalize()}s avant l'âge prédit", points["ecart"] <= 0, ROUGE)):
+categories = (
+    (f"{mort.capitalize()}s après l'âge prédit", points["ecart"] > 0, VERT),
+    (f"{mort.capitalize()}s avant l'âge prédit", points["ecart"] <= 0, ROUGE),
+    (f"{mort.capitalize()}s avant {AGE_PREDICTION} ans (pas d'âge prédit)",
+     points["ecart"].isna(), GRIS_POINT),
+)
+for nom_trace, masque, couleur in categories:
     sous = points[masque]
     fig_n.add_trace(go.Scattergl(
-        x=sous["annee_naissance"], y=sous["year"] - sous["annee_naissance"],
-        mode="markers", name=nom_trace,
-        marker=dict(color=couleur, opacity=0.35,
-                    size=np.clip(4 + 2.2 * np.sqrt(sous["nb"]), 5, 22),
-                    line=dict(width=0)),
-        customdata=np.stack([sous["year"], sous["nb"], sous["ecart"], sous["noms"]], axis=-1),
-        hovertemplate=("<b>" + ne + "s en %{x}, " + mort + "s en %{customdata[0]}</b>"
-                       "<br>%{customdata[1]} personnalité(s) · écart moyen %{customdata[2]:+.1f} ans"
-                       "<br><br>%{customdata[3]}<extra></extra>"),
+        x=sous["year"], y=sous["age"], mode="markers", name=nom_trace,
+        marker=dict(color=couleur, opacity=0.4,
+                    size=np.clip(4 + 2.2 * np.sqrt(sous["nb"]), 5, 22), line=dict(width=0)),
+        customdata=np.stack([sous["annee_naissance"], sous["nb"], sous["noms"]], axis=-1),
+        hovertemplate=("<b>" + mort.capitalize() + "s en %{x}, " + ne.lower()
+                       + "s en %{customdata[0]}</b><br>%{customdata[1]} personnalité(s)"
+                       "<br><br>%{customdata[2]}<extra></extra>"),
     ))
 fig_n.add_trace(go.Scatter(
-    x=reference["annee_naissance"], y=reference["age_moyen"], mode="lines",
-    line=dict(color="#334155", width=3), name=f"{population}, même période",
-    hovertemplate=(f"{population} " + ne.lower() + "s en %{x}<br>"
-                   "âge moyen au décès : %{y:.1f} ans<extra></extra>"),
+    x=lignes_annee["year"], y=lignes_annee["age_moyen_population"], mode="lines",
+    line=dict(color="#334155", width=3), name=f"{population} : âge moyen au décès",
+    hovertemplate=f"{population}, %{{x}} : %{{y:.1f}} ans<extra></extra>",
 ))
 fig_n.add_trace(go.Scatter(
-    x=moyenne_pers["annee_naissance"], y=moyenne_pers["age_moyen"], mode="lines",
-    line=dict(color=SEX_COLORS[sexe], width=3.5), name="Personnalités, moyenne",
-    customdata=moyenne_pers["nb"],
-    hovertemplate=("Personnalités " + ne.lower() + "s en %{x}<br>âge moyen au décès : "
-                   "%{y:.1f} ans (%{customdata} personnes)<extra></extra>"),
+    x=lignes_annee["year"], y=lignes_annee["age_moyen_personnalites"], mode="lines",
+    line=dict(color=SEX_COLORS[sexe], width=3.5), name="Personnalités : âge moyen au décès",
+    customdata=lignes_annee["nb_personnalites"],
+    hovertemplate="Personnalités, %{x} : %{y:.1f} ans (%{customdata} décès)<extra></extra>",
 ))
-fig_n.add_trace(go.Scatter(
-    x=predit["annee_naissance"], y=predit["age_predit"], mode="lines",
-    line=dict(color="#f97316", width=3, dash="dash"), name="Âge prédit",
-    hovertemplate="Âge prédit pour une naissance en %{x} : %{y:.1f} ans<extra></extra>",
-))
-fig_n.update_xaxes(title="Année de naissance", range=[n_min - 1, n_max + 1])
-fig_n.update_yaxes(title="Âge au décès (ans)", range=[AGE_PREDICTION - 1, AGE_MAX_AXE])
+fig_n.update_xaxes(title="Année de décès", range=[p_debut - 0.7, p_fin + 0.7])
+fig_n.update_yaxes(title="Âge au décès (ans)",
+                   range=[AGE_ADULTE - 2, max(110, int(points["age"].max()) + 3)])
 apply_layout(fig_n, height=680, margin=dict(b=150),
              legend=dict(orientation="h", yanchor="top", y=-0.14, x=0),
-             title=f"{fr_num(len(ecarts), 0)} {SEX_LABELS[sexe].lower()} — {periode}")
+             title=f"{fr_num(int(points['nb'].sum()), 0)} {SEX_LABELS[sexe].lower()} — {periode}")
 st.plotly_chart(fig_n, width='stretch')
 
-ecart_lignes = (moyenne_pers.merge(reference, on="annee_naissance", suffixes=("_pers", "_pop"))
-                .assign(ecart=lambda d: d["age_moyen_pers"] - d["age_moyen_pop"]))
+derniere_annee = lignes_annee.iloc[-1]
+deces_pop = repo.deces_population()
+deces_pop = deces_pop[(deces_pop["sexe"] == sexe) & deces_pop["year"].between(p_debut, p_fin)
+                      & (deces_pop["age"] >= AGE_ADULTE)]
+part_precoce_pop = (deces_pop.loc[deces_pop["age"] < AGE_PREDICTION, "deces"].sum()
+                    / deces_pop["deces"].sum())
+part_precoce_pers = float((points.loc[points["ecart"].isna(), "nb"].sum()) / points["nb"].sum())
+
 note_lecture(
-    "<strong>Axe horizontal</strong> : l'année de naissance."
+    "<strong>Axe horizontal</strong> : l'année de décès."
     "<br>"
     "<strong>Axe vertical</strong> : l'âge au décès."
     "<br>"
-    "<strong>Chaque point</strong> regroupe les personnalités nées la même année et "
-    "mortes la même année. Plus il est gros, plus il en contient. Survolez-le pour "
-    "voir les noms et l'écart."
+    f"<strong>Chaque point</strong> regroupe les personnalités {mort}s la même année "
+    f"et {ne.lower()}s la même année. Plus il est gros, plus il en contient. "
+    "Survolez-le pour voir les noms."
     "<br>"
-    f"<strong>Couleur des points</strong> : vert si {mort} après l'âge prédit "
-    "(tirets orange), rouge si avant."
+    f"<strong>Couleur</strong> : vert si {mort} après son âge prédit, rouge si avant, "
+    f"gris si {mort} avant {AGE_PREDICTION} ans (pas d'âge prédit)."
+    "<br>"
+    "<strong>Deux lignes</strong> : la ligne colorée est l'âge moyen des personnalités "
+    f"{mort}s cette année-là ; la ligne foncée, celui de l'{population_dans_phrase} "
+    f"{mort}s la même année. Dans les deux cas, décès à {AGE_ADULTE} ans ou plus."
     "<br><br>"
-    "<strong>Pourquoi vert à gauche et rouge à droite ?</strong> On ne voit que les "
-    f"décès entre {p_debut} et {p_fin} : la bande blanche. Les zones grises sont "
-    "hors de cette période. Les générations anciennes "
-    "n'y figurent que si elles ont vécu très vieux, les récentes que si elles sont "
-    "mortes jeunes. Ce n'est pas un effet de la célébrité."
+    f"<strong>Exemple, {int(derniere_annee['year'])}</strong> : "
+    f"{fr_num(derniere_annee['age_moyen_personnalites'])} ans pour les personnalités, "
+    f"{fr_num(derniere_annee['age_moyen_population'])} ans pour l'{population_dans_phrase}."
     "<br><br>"
-    "<strong>La bonne comparaison : les deux lignes pleines.</strong> La ligne "
-    f"colorée est l'âge moyen des personnalités, la ligne foncée celui de l'"
-    f"{population_dans_phrase} " + ne.lower() + "s la même année. Toutes deux "
-    "subissent le même effet de période. Elles s'arrêtent à 99 ans : au-delà, "
-    "Eurostat ne donne pas l'âge exact."
+    "<strong>Ce que l'écart entre les lignes ne dit pas.</strong> Il compare des "
+    "personnes mortes la même année, pas des personnes nées la même année."
     + (
-        f" Ici, la ligne colorée est au-dessus pour {(ecart_lignes['ecart'] > 0).mean():.0%} "
-        f"des années de naissance, avec un écart moyen de "
-        f"{signe_ans(ecart_lignes['ecart'].mean())}.".replace("%", " %")
-        if len(ecart_lignes) else ""
-    ),
+        f" Il tient en partie aux décès avant {AGE_PREDICTION} ans : "
+        f"{part_precoce_pop:.0%} des décès de l'{population_dans_phrase}, contre "
+        f"{part_precoce_pers:.0%} chez les personnalités."
+        if part_precoce_pop - part_precoce_pers >= 0.03 else
+        f" Les décès avant {AGE_PREDICTION} ans pèsent autant des deux côtés "
+        f"({part_precoce_pop:.0%} et {part_precoce_pers:.0%}) : ils n'expliquent "
+        "pas l'écart."
+    ).replace("%", " %"),
     repo.millesime("deces_personnalites_wikidata") + " · "
     + repo.millesime("deces_par_age_eurostat") + " · espérance de vie à 60 ans : "
     + repo.millesime("esperance_vie_fr_insee"),
