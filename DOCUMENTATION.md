@@ -278,7 +278,47 @@ la même année, décès à 25 ans ou plus dans les deux cas — le même calcul
 > récentes que par leurs décès précoces, ce qui colorait artificiellement le
 > nuage (vert à gauche, rouge à droite).
 
-### 3.9 Authentification HMD### 3.9 Authentification HMD
+### 3.9 Boîtes à moustaches par année de décès — `boites_population_par_annee_deces`
+
+Même population que § 3.8, résumée par une boîte par année : quartiles, âge
+moyen et moustaches à 1,5 écart interquartile.
+
+- **Personnalités** : calcul fait par Plotly sur les âges individuels ; les
+  personnalités au-delà des moustaches apparaissent en points, avec leur nom au
+  survol.
+- **Ensemble des Français** : Eurostat ne donne que des effectifs par âge. Les
+  quartiles sont le premier âge dont la part cumulée des décès atteint 25, 50 et
+  75 % ; les moustaches, les âges observés les plus extrêmes à moins de 1,5 écart
+  interquartile de la boîte. La classe « 100 ans et plus » compte pour 100 ans,
+  ce qui plafonne la moustache haute.
+
+### 3.10 Nuage de points par année de naissance — `points_personnalites`
+
+Vue complémentaire de § 3.8, limitée aux décès à 60 ans ou plus (ceux qui ont un
+âge prédit). Chaque personnalité se place en $(n, a)$ : année de naissance, âge
+au décès.
+Celles qui partagent la même année de naissance **et** la même année de décès
+forment un seul point, dont la taille croît avec leur nombre ; le survol liste
+les plus connues (6 au plus) avec leur écart à l'âge prédit.
+
+**Effet de fenêtre.** Seuls les décès survenus entre $t_0$ et $t_1$ sont
+observés, donc pour une génération $n$ seuls les âges $a \in [t_0 - n,\; t_1 - n]$
+sont visibles. Une génération ancienne n'apparaît qu'à travers ceux morts très
+vieux, une génération récente qu'à travers ceux morts jeunes. Les zones hors de
+cette bande sont grisées sur le graphique : c'est ce qui explique que les points
+soient majoritairement verts à gauche et rouges à droite, sans lien avec la
+célébrité.
+
+La comparaison juste se fait donc entre deux courbes soumises au même effet :
+
+$$\bar{a}_{\text{pers}}(n) \quad\text{et}\quad \bar{a}_{\text{pop}}(n) = \dfrac{\sum_{t=t_0}^{t_1} (t - n)\, D_{t,\,t-n}}{\sum_{t=t_0}^{t_1} D_{t,\,t-n}}, \qquad 60 \leq t - n \leq 99$$
+
+Les deux courbes s'arrêtent à 99 ans : Eurostat regroupe les décès de 100 ans et
+plus dans une classe ouverte, sans âge exact ni année de naissance. La courbe
+des personnalités n'est tracée que pour les années de naissance comptant au
+moins 10 personnes.
+
+### 3.11 Authentification HMD
 
 HMD n'est **pas** utilisé par défaut, Eurostat fournissant les mêmes quantités
 en accès libre depuis 2014. La fonction `hmd_session()` reste disponible pour
@@ -317,6 +357,8 @@ table de mortalité.
 | Personnalités : âge prédit | 60 ans + espérance de vie à 60 ans l'année des 60 ans (§ 3.7) | Couvre 92 % des personnalités, sans biais de mortalité infantile |
 | Personnalités : référence | Même mesure sur tous les décès | La prédiction est dépassée par la majorité de la population elle-même |
 | Personnalités : nuage de points | Année de décès en abscisse, un point par (décès, naissance), deux lignes d'âge moyen | Rendre visibles toutes les personnalités sans effet de fenêtre (§ 3.8) |
+| Personnalités : boîtes à moustaches | Une boîte par année et par groupe, quartiles de la population pondérés par les décès | Voir la dispersion, pas seulement la moyenne (§ 3.9) |
+| Personnalités : vue par année de naissance | Conservée en complément, zones hors période grisées | Comparer des contemporains, en rendant visible l'effet de fenêtre (§ 3.10) |
 | Découpage des pages | Une question, une source, une période par page | Une figure mêlant deux périmètres est illisible : c'est ce qui a motivé le passage de quatre à six, puis sept pages |
 | Axe des années, page « par âge » | Fixé à 1998–2024 quel que soit l'âge | Un axe qui bouge avec le sélecteur rend deux sélections incomparables |
 | Survie au-delà du dernier âge documenté | Affichage borné, écart signalé | Mieux vaut afficher moins que d'inventer une valeur |
@@ -393,7 +435,7 @@ graphique »** qui explique les axes, le sens d'une variation et le piège
 | Distribution & variance | Bande Q1–Q3 + médiane + e₀, avec repère visuel de la frontière estimé / mesuré ; aire d'évolution de l'IQR |
 | Explorateur de cohorte | Courbe de survie empilée (vivants / décédés cumulés) avec repère de l'âge courant |
 | Survie à un âge donné | Aire du % encore en vie à âge fixe selon l'année d'observation, flèche de progression |
-| Personnalités | Barres groupées par période de 5 ans : âge moyen au décès de l'ensemble (gris) et des personnalités (couleur du sexe) ; nuage de toutes les personnalités par année de décès, un point par année de décès × année de naissance (vert après l'âge prédit, rouge avant, gris avant 60 ans), lignes d'âge moyen au décès des personnalités et de l'ensemble ; histogramme des écarts à l'âge prédit, personnalités en barres, ensemble en ligne |
+| Personnalités | Barres groupées par période de 5 ans : âge moyen au décès de l'ensemble (gris) et des personnalités (couleur du sexe) ; nuage de toutes les personnalités par année de décès, un point par année de décès × année de naissance (vert après l'âge prédit, rouge avant, gris avant 60 ans), lignes d'âge moyen au décès des personnalités et de l'ensemble ; boîtes à moustaches par année de décès, ensemble en gris et personnalités en couleur, noms des personnalités extrêmes au survol ; nuage par année de naissance avec zones hors période grisées, courbe d'âge prédit et courbes d'âge moyen des personnalités et de l'ensemble nés la même année ; histogramme des écarts à l'âge prédit, personnalités en barres, ensemble en ligne |
 
 Le thème Plotly (`plotly_white` / `plotly_dark`) suit le thème Streamlit courant
 (`apply_layout`). Chaque page propose un export **CSV** (`download_csv`).
@@ -515,7 +557,8 @@ décès, période limitée aux années communes, sexes séparés, âge prédit p
 l'année des 60 ans et sur la seule source INSEE, personnalités mortes avant
 60 ans écartées et dénombrées, un point par couple décès × naissance, point
 sans âge prédit pour les décès avant 60 ans, même seuil de 25 ans pour les
-lignes annuelles.
+lignes annuelles, quartiles et moustaches de la population pondérés par les
+décès, classe « 100 ans et plus » écartée des courbes par année de naissance.
 
 La CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) exécute les trois
 commandes ci-dessus à chaque push et chaque pull request.

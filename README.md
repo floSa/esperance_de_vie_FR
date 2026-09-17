@@ -138,6 +138,8 @@ Streamlit) ; chaque page propose un export CSV.
 | Âge prédit d'une personnalité | 60 ans + espérance de vie à 60 ans l'année de ses 60 ans | À la naissance, l'INSEE ne remonte qu'à 1946 et la mesure inclut les décès d'enfants |
 | Référence de l'âge prédit | Même calcul sur tous les décès enregistrés | La prédiction sous-estime la survie, puisque la mortalité continue de baisser : l'ensemble des Français la dépasse aussi le plus souvent |
 | Nuage de points | Année de décès en abscisse, un point par couple (année de décès, année de naissance) | Rendre visibles les 25 000 personnalités ; chaque année de décès est observée en entier, sans effet de fenêtre |
+| Boîtes à moustaches | Une boîte par année, ensemble et personnalités côte à côte | Voir la dispersion des âges au décès, pas seulement leur moyenne |
+| Vue par année de naissance | Conservée en complément, zones hors période grisées | Comparer des contemporains en montrant l'effet de la période observée |
 
 ## Résultats clés
 
