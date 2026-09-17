@@ -131,39 +131,46 @@ def nuage(monkeypatch):
         {"year": 1990, "sexe": "hommes", "age": 60, "esperance": 20.0, "source": "insee"},
     ])
     personnalites = pd.DataFrame([
-        # Même naissance, même année de décès : un seul point.
+        # Même année de décès, même naissance : un seul point.
         {"year": 2010, "sexe": "hommes", "age": 80, "annee_naissance": 1930,
-         "nom": "Très connu", "nb_editions_wikipedia": 90, "wikidata_id": "Q1"},
+         "nom": "Très connu", "nb_editions_wikipedia": 90},
         {"year": 2010, "sexe": "hommes", "age": 79, "annee_naissance": 1930,
-         "nom": "Peu connu", "nb_editions_wikipedia": 2, "wikidata_id": "Q2"},
-        {"year": 2031, "sexe": "hommes", "age": 101, "annee_naissance": 1930,
-         "nom": "Centenaire", "nb_editions_wikipedia": 5, "wikidata_id": "Q3"},
+         "nom": "Peu connu", "nb_editions_wikipedia": 2},
+        # Mort avant 60 ans : point sans âge prédit.
+        {"year": 2010, "sexe": "hommes", "age": 40, "annee_naissance": 1970,
+         "nom": "Jeune", "nb_editions_wikipedia": 5},
+        # Mort avant 25 ans : hors comparaison.
+        {"year": 2010, "sexe": "hommes", "age": 20, "annee_naissance": 1990,
+         "nom": "Enfant", "nb_editions_wikipedia": 5},
     ])
     population = pd.DataFrame([
-        {"year": 2010, "sexe": "hommes", "age": 80, "deces": 10},
-        {"year": 2030, "sexe": "hommes", "age": 100, "deces": 999},  # classe ouverte
+        {"year": 2010, "sexe": "hommes", "age": 70, "deces": 300},
+        {"year": 2010, "sexe": "hommes", "age": 30, "deces": 100},
+        {"year": 2010, "sexe": "hommes", "age": 2, "deces": 999},
     ])
     monkeypatch.setattr(repo, "esperance_vie", lambda: esperance)
     monkeypatch.setattr(repo, "personnalites", lambda: personnalites)
     monkeypatch.setattr(repo, "deces_population", lambda: population)
-    monkeypatch.setattr(repo, "MIN_PERSONNALITES_PAR_NAISSANCE", 1)
 
 
-def test_un_point_par_naissance_et_deces(nuage):
-    points = repo.points_personnalites("hommes", 2000, 2040)
-    groupe = points[(points["annee_naissance"] == 1930) & (points["year"] == 2010)].iloc[0]
-    assert groupe["nb"] == 2
+def test_un_point_par_deces_et_naissance(nuage):
+    points = repo.points_personnalites("hommes", 2000, 2020).set_index("annee_naissance")
+    assert len(points) == 2  # le décès à 20 ans est écarté
+    assert points.loc[1930, "nb"] == 2
     # Les plus connues d'abord, écart formaté à la française.
-    assert groupe["noms"].startswith("Très connu — 80 ans (+0,0)")
-    assert len(points) == 2
+    assert points.loc[1930, "noms"].startswith("Très connu — 80 ans (+0,0)")
 
 
-def test_courbes_par_naissance_sans_classe_ouverte(nuage):
-    pop = repo.age_moyen_population_par_naissance("hommes", 2000, 2040)
-    # La classe « 100 ans et plus » n'a ni âge ni naissance exacts : écartée.
-    assert pop["annee_naissance"].tolist() == [1930]
-    assert pop["age_moyen"].iloc[0] == pytest.approx(80.0)
-    pers = repo.age_moyen_personnalites_par_naissance("hommes", 2000, 2040)
-    # Même règle côté personnalités : le centenaire ne compte pas.
-    assert pers["age_moyen"].iloc[0] == pytest.approx(79.5)
-    assert pers["nb"].iloc[0] == 2
+def test_point_sans_age_predit_avant_60_ans(nuage):
+    points = repo.points_personnalites("hommes", 2000, 2020).set_index("annee_naissance")
+    assert pd.isna(points.loc[1970, "ecart"])
+    assert "avant 60 ans" in points.loc[1970, "noms"]
+
+
+def test_age_moyen_par_annee_meme_seuil_des_deux_cotes(nuage):
+    lignes = repo.age_moyen_par_annee_deces("hommes", 2000, 2020).set_index("year")
+    # Population : (70·300 + 30·100) / 400, le décès à 2 ans est écarté.
+    assert lignes.loc[2010, "age_moyen_population"] == pytest.approx(60.0)
+    # Personnalités : 80, 79 et 40 ; le décès à 20 ans est écarté.
+    assert lignes.loc[2010, "age_moyen_personnalites"] == pytest.approx((80 + 79 + 40) / 3)
+    assert lignes.loc[2010, "nb_personnalites"] == 3

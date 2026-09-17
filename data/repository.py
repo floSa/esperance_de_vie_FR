@@ -355,73 +355,56 @@ def part_apres_et_mediane(ecarts: pd.Series, poids: pd.Series | None = None) -> 
 
 
 def points_personnalites(sexe: str, debut: int, fin: int, noms_max: int = 6) -> pd.DataFrame:
-    """Un point par couple (année de naissance, année de décès).
+    """Un point par couple (année de décès, année de naissance), décès à 25 ans ou plus.
 
-    Les personnalités nées la même année et mortes la même année partagent un
-    point. Le libellé liste les plus connues d'entre elles avec leur écart.
+    Les personnalités mortes la même année et nées la même année partagent un
+    point. L'écart à l'âge prédit n'existe que pour les décès à 60 ans ou plus ;
+    il vaut NaN pour un point formé de décès plus précoces.
     """
-    ecarts, _ = ecarts_personnalites(sexe, debut, fin)
-    ecarts = ecarts.sort_values("nb_editions_wikipedia", ascending=False)
+    pers = personnalites()
+    pers = pers[(pers["sexe"] == sexe) & pers["year"].between(debut, fin)
+                & (pers["age"] >= AGE_ADULTE)]
+    pers = pers.assign(annee_60=pers["annee_naissance"] + AGE_PREDICTION)
+    pers = pers.merge(_esperance_a_60(), on=["annee_60", "sexe"], how="left")
+    avec_prediction = pers["age"] >= AGE_PREDICTION
+    pers["ecart"] = (pers["age"] - (AGE_PREDICTION + pers["e60"])).where(avec_prediction)
+    pers = pers.sort_values("nb_editions_wikipedia", ascending=False)
+
+    def detail(r) -> str:
+        if pd.isna(r.ecart):
+            return f"{r.nom} — {r.age} ans (avant {AGE_PREDICTION} ans)"
+        return f"{r.nom} — {r.age} ans ({f'{r.ecart:+.1f}'.replace('.', ',')})"
 
     def libelle(groupe: pd.DataFrame) -> str:
-        lignes = [f"{r.nom} — {r.age} ans ({f'{r.ecart:+.1f}'.replace('.', ',')})"
-                  for r in groupe.head(noms_max).itertuples()]
+        lignes = [detail(r) for r in groupe.head(noms_max).itertuples()]
         if len(groupe) > noms_max:
             lignes.append(f"… et {len(groupe) - noms_max} autres")
         return "<br>".join(lignes)
 
-    groupes = ecarts.groupby(["annee_naissance", "year"], sort=False)
+    groupes = pers.groupby(["year", "annee_naissance"], sort=False)
     points = groupes.agg(nb=("nom", "size"), age=("age", "mean"),
-                         age_predit=("age_predit", "mean"),
                          ecart=("ecart", "mean")).reset_index()
     points["noms"] = groupes.apply(libelle, include_groups=False).to_numpy()
     return points
 
 
-# Eurostat regroupe les décès de 100 ans et plus dans une classe ouverte : ni
-# l'âge exact ni l'année de naissance n'y sont connus. Les courbes par année de
-# naissance s'arrêtent donc à 99 ans, des deux côtés.
-AGE_CLASSE_OUVERTE = 100
+def age_moyen_par_annee_deces(sexe: str, debut: int, fin: int,
+                              age_min: int = AGE_ADULTE) -> pd.DataFrame:
+    """Âge moyen au décès, année par année : personnalités contre ensemble.
 
-
-def age_moyen_population_par_naissance(sexe: str, debut: int, fin: int) -> pd.DataFrame:
-    """Âge moyen au décès des Français nés une année donnée, morts entre `debut` et `fin`.
-
-    Référence soumise au même effet de fenêtre que les personnalités : une
-    génération ancienne n'apparaît que par ceux encore vivants en `debut`, une
-    génération récente que par ceux déjà morts en `fin`.
+    Chaque année de décès est observée en entier, à tous les âges : contrairement
+    à un classement par année de naissance, aucun effet de fenêtre ne déforme la
+    comparaison.
     """
     pop = deces_population()
-    pop = pop[(pop["sexe"] == sexe) & pop["year"].between(debut, fin)
-              & pop["age"].between(AGE_PREDICTION, AGE_CLASSE_OUVERTE - 1)]
-    pop = pop.assign(annee_naissance=pop["year"] - pop["age"],
-                     age_x_deces=pop["age"] * pop["deces"])
-    out = pop.groupby("annee_naissance").agg(age_x=("age_x_deces", "sum"),
-                                             deces=("deces", "sum")).reset_index()
-    out["age_moyen"] = out["age_x"] / out["deces"]
-    return out[["annee_naissance", "age_moyen", "deces"]]
+    pop = pop[(pop["sexe"] == sexe) & pop["year"].between(debut, fin) & (pop["age"] >= age_min)]
+    cote_pop = (pop.assign(age_x=pop["age"] * pop["deces"])
+                   .groupby("year").agg(age_x=("age_x", "sum"), deces=("deces", "sum")))
+    cote_pop["age_moyen_population"] = cote_pop["age_x"] / cote_pop["deces"]
 
-
-def age_predit_par_naissance(sexe: str) -> pd.DataFrame:
-    e = _esperance_a_60()
-    e = e[e["sexe"] == sexe]
-    return pd.DataFrame({"annee_naissance": e["annee_60"] - AGE_PREDICTION,
-                         "age_predit": AGE_PREDICTION + e["e60"]}).sort_values("annee_naissance")
-
-
-# En dessous, la moyenne d'une année de naissance repose sur trop peu de
-# personnalités pour être tracée sans zigzags trompeurs.
-MIN_PERSONNALITES_PAR_NAISSANCE = 10
-
-
-def age_moyen_personnalites_par_naissance(sexe: str, debut: int, fin: int) -> pd.DataFrame:
-    """Âge moyen au décès des personnalités, par année de naissance.
-
-    Même fenêtre d'observation que `age_moyen_population_par_naissance` : les
-    deux courbes se comparent directement.
-    """
-    ecarts, _ = ecarts_personnalites(sexe, debut, fin)
-    ecarts = ecarts[ecarts["age"] < AGE_CLASSE_OUVERTE]
-    out = ecarts.groupby("annee_naissance").agg(age_moyen=("age", "mean"),
-                                                nb=("age", "size")).reset_index()
-    return out[out["nb"] >= MIN_PERSONNALITES_PAR_NAISSANCE]
+    pers = personnalites()
+    pers = pers[(pers["sexe"] == sexe) & pers["year"].between(debut, fin) & (pers["age"] >= age_min)]
+    cote_pers = pers.groupby("year").agg(age_moyen_personnalites=("age", "mean"),
+                                         nb_personnalites=("age", "size"))
+    return (cote_pop[["age_moyen_population"]].join(cote_pers, how="inner")
+                                              .reset_index())
