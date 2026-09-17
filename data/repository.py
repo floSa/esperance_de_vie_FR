@@ -14,6 +14,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 SOURCES_DIR = Path(__file__).resolve().parent / "sources"
@@ -408,3 +409,89 @@ def age_moyen_par_annee_deces(sexe: str, debut: int, fin: int,
                                          nb_personnalites=("age", "size"))
     return (cote_pop[["age_moyen_population"]].join(cote_pers, how="inner")
                                               .reset_index())
+
+
+# Eurostat regroupe les décès de 100 ans et plus dans une classe ouverte : ni
+# l'âge exact ni l'année de naissance n'y sont connus. Les courbes par année de
+# naissance s'arrêtent donc à 99 ans, des deux côtés.
+AGE_CLASSE_OUVERTE = 100
+
+
+def age_moyen_population_par_naissance(sexe: str, debut: int, fin: int) -> pd.DataFrame:
+    """Âge moyen au décès des Français nés une année donnée, morts entre `debut` et `fin`.
+
+    Référence soumise au même effet de fenêtre que les personnalités : une
+    génération ancienne n'apparaît que par ceux encore vivants en `debut`, une
+    génération récente que par ceux déjà morts en `fin`.
+    """
+    pop = deces_population()
+    pop = pop[(pop["sexe"] == sexe) & pop["year"].between(debut, fin)
+              & pop["age"].between(AGE_PREDICTION, AGE_CLASSE_OUVERTE - 1)]
+    pop = pop.assign(annee_naissance=pop["year"] - pop["age"],
+                     age_x_deces=pop["age"] * pop["deces"])
+    out = pop.groupby("annee_naissance").agg(age_x=("age_x_deces", "sum"),
+                                             deces=("deces", "sum")).reset_index()
+    out["age_moyen"] = out["age_x"] / out["deces"]
+    return out[["annee_naissance", "age_moyen", "deces"]]
+
+
+def age_predit_par_naissance(sexe: str) -> pd.DataFrame:
+    e = _esperance_a_60()
+    e = e[e["sexe"] == sexe]
+    return pd.DataFrame({"annee_naissance": e["annee_60"] - AGE_PREDICTION,
+                         "age_predit": AGE_PREDICTION + e["e60"]}).sort_values("annee_naissance")
+
+
+# En dessous, la moyenne d'une année de naissance repose sur trop peu de
+# personnalités pour être tracée sans zigzags trompeurs.
+MIN_PERSONNALITES_PAR_NAISSANCE = 10
+
+
+def age_moyen_personnalites_par_naissance(sexe: str, debut: int, fin: int) -> pd.DataFrame:
+    """Âge moyen au décès des personnalités, par année de naissance.
+
+    Même fenêtre d'observation que `age_moyen_population_par_naissance` : les
+    deux courbes se comparent directement.
+    """
+    ecarts, _ = ecarts_personnalites(sexe, debut, fin)
+    ecarts = ecarts[ecarts["age"] < AGE_CLASSE_OUVERTE]
+    out = ecarts.groupby("annee_naissance").agg(age_moyen=("age", "mean"),
+                                                nb=("age", "size")).reset_index()
+    return out[out["nb"] >= MIN_PERSONNALITES_PAR_NAISSANCE]
+
+
+def boites_population_par_annee_deces(sexe: str, debut: int, fin: int,
+                                      age_min: int = AGE_ADULTE) -> pd.DataFrame:
+    """Quartiles et moustaches de l'âge au décès de l'ensemble, année par année.
+
+    Eurostat donne des effectifs par âge, pas des individus : les statistiques
+    sont calculées sur la distribution pondérée par le nombre de décès, avec la
+    même règle de moustaches que Plotly (1,5 écart interquartile). La classe
+    « 100 ans et plus » compte pour 100 ans, ce qui borne la moustache haute.
+    """
+    pop = deces_population()
+    pop = pop[(pop["sexe"] == sexe) & pop["year"].between(debut, fin)
+              & (pop["age"] >= age_min) & (pop["deces"] > 0)]
+    lignes = []
+    for annee, groupe in pop.groupby("year"):
+        groupe = groupe.sort_values("age")
+        cumul = (groupe["deces"].cumsum() / groupe["deces"].sum()).to_numpy()
+        ages = groupe["age"].to_numpy()
+        # Premier âge dont la part cumulée des décès atteint le seuil.
+        q1, mediane, q3 = (float(ages[np.searchsorted(cumul, p)]) for p in (0.25, 0.5, 0.75))
+        ecart = q3 - q1
+        lignes.append({
+            "year": int(annee), "q1": q1, "mediane": mediane, "q3": q3,
+            "moustache_basse": float(ages[ages >= q1 - 1.5 * ecart].min()),
+            "moustache_haute": float(ages[ages <= q3 + 1.5 * ecart].max()),
+            "moyenne": float((groupe["age"] * groupe["deces"]).sum() / groupe["deces"].sum()),
+        })
+    return pd.DataFrame(lignes)
+
+
+def personnalites_par_annee_deces(sexe: str, debut: int, fin: int,
+                                  age_min: int = AGE_ADULTE) -> pd.DataFrame:
+    """Une ligne par personnalité morte à `age_min` ans ou plus, pour les boîtes."""
+    pers = personnalites()
+    return pers[(pers["sexe"] == sexe) & pers["year"].between(debut, fin)
+                & (pers["age"] >= age_min)].reset_index(drop=True)

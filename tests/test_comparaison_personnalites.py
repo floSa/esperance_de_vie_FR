@@ -174,3 +174,53 @@ def test_age_moyen_par_annee_meme_seuil_des_deux_cotes(nuage):
     # Personnalités : 80, 79 et 40 ; le décès à 20 ans est écarté.
     assert lignes.loc[2010, "age_moyen_personnalites"] == pytest.approx((80 + 79 + 40) / 3)
     assert lignes.loc[2010, "nb_personnalites"] == 3
+
+
+@pytest.fixture
+def par_naissance(monkeypatch):
+    esperance = pd.DataFrame([
+        {"year": 1990, "sexe": "hommes", "age": 60, "esperance": 20.0, "source": "insee"},
+    ])
+    personnalites = pd.DataFrame([
+        {"year": 2010, "sexe": "hommes", "age": 80, "annee_naissance": 1930,
+         "nom": "A", "nb_editions_wikipedia": 9},
+        {"year": 2010, "sexe": "hommes", "age": 79, "annee_naissance": 1930,
+         "nom": "B", "nb_editions_wikipedia": 2},
+        {"year": 2031, "sexe": "hommes", "age": 101, "annee_naissance": 1930,
+         "nom": "Centenaire", "nb_editions_wikipedia": 5},
+    ])
+    population = pd.DataFrame([
+        {"year": 2010, "sexe": "hommes", "age": 80, "deces": 10},
+        {"year": 2030, "sexe": "hommes", "age": 100, "deces": 999},  # classe ouverte
+    ])
+    monkeypatch.setattr(repo, "esperance_vie", lambda: esperance)
+    monkeypatch.setattr(repo, "personnalites", lambda: personnalites)
+    monkeypatch.setattr(repo, "deces_population", lambda: population)
+    monkeypatch.setattr(repo, "MIN_PERSONNALITES_PAR_NAISSANCE", 1)
+
+
+def test_courbes_par_naissance_sans_classe_ouverte(par_naissance):
+    pop = repo.age_moyen_population_par_naissance("hommes", 2000, 2040)
+    # La classe « 100 ans et plus » n'a ni âge ni naissance exacts : écartée.
+    assert pop["annee_naissance"].tolist() == [1930]
+    assert pop["age_moyen"].iloc[0] == pytest.approx(80.0)
+    pers = repo.age_moyen_personnalites_par_naissance("hommes", 2000, 2040)
+    # Même règle côté personnalités : le centenaire ne compte pas.
+    assert pers["age_moyen"].iloc[0] == pytest.approx(79.5)
+    assert pers["nb"].iloc[0] == 2
+
+
+def test_boites_population_ponderees(monkeypatch):
+    # 100 décès : 10 à 30 ans, 40 à 70, 40 à 80, 10 à 99.
+    population = pd.DataFrame([
+        {"year": 2010, "sexe": "femmes", "age": a, "deces": n}
+        for a, n in ((10, 500), (30, 10), (70, 40), (80, 40), (99, 10))
+    ])
+    monkeypatch.setattr(repo, "deces_population", lambda: population)
+    boite = repo.boites_population_par_annee_deces("femmes", 2010, 2010).iloc[0]
+    # Le décès à 10 ans est sous le seuil de 25 ans : ignoré malgré son poids.
+    assert (boite["q1"], boite["mediane"], boite["q3"]) == (70.0, 70.0, 80.0)
+    # Moustaches à 1,5 écart interquartile : [55, 95] → âges observés 70 et 80.
+    assert boite["moustache_basse"] == 70.0
+    assert boite["moustache_haute"] == 80.0
+    assert boite["moyenne"] == pytest.approx((30 * 10 + 70 * 40 + 80 * 40 + 99 * 10) / 100)
