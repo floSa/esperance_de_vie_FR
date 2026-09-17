@@ -13,3 +13,7 @@ __pycache__/
 
 # Config locale Claude Code
 .claude/
+
+# Cache de la collecte Wikidata : régénérable, volumineux
+data/personnalites/brut/
+*.tmp
