@@ -175,9 +175,10 @@ Streamlit) ; chaque page propose un export CSV.
 ## Structure
 
 ```
-├── app.py                        # point d'entrée Streamlit
+├── app.py                        # point d'entrée : navigation et titres des pages
+├── accueil.py                    # page d'accueil
 ├── common.py                     # palette, thème Plotly, survie de génération
-├── pages/                        # les sept vues (une question par page)
+├── vues/                         # les sept vues (un sujet par page)
 ├── data/
 │   ├── repository.py             # accès aux données générées
 │   ├── sources/                  # CSV + manifest.json (régénérés)

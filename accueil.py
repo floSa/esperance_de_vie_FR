@@ -1,0 +1,79 @@
+import streamlit as st
+
+from common import fr_num, render_sidebar, source_note
+from data import repository as repo
+
+render_sidebar()
+
+serie = repo.serie_par_sexe(0)
+annee = int(serie["year"].max())
+derniere = serie.iloc[-1]
+
+st.title("📊 Espérance de vie — France & Europe")
+st.markdown(
+    "Sept vues d'analyse de l'espérance de vie et de l'âge au décès en France et en "
+    "Europe, à partir des séries de l'**INSEE**, des tables de mortalité "
+    "**Eurostat**, des séries historiques d'**Our World in Data** et des données "
+    "**Wikidata** sur les personnalités."
+)
+
+c1, c2, c3 = st.columns(3)
+c1.metric(f"e₀ femmes ({annee})", f"{fr_num(derniere['femmes'])} ans")
+c2.metric(f"e₀ hommes ({annee})", f"{fr_num(derniere['hommes'])} ans")
+c3.metric("Écart femmes − hommes",
+          f"{fr_num(derniere['femmes'] - derniere['hommes'])} ans")
+
+st.markdown("---")
+st.subheader("Les sept vues")
+st.caption("Un sujet par page, une source, une période.")
+
+col_a, col_b = st.columns(2)
+with col_a:
+    st.page_link(
+        "vues/01_vue_generale.py",
+        label="**Vue générale** — évolution de l'espérance de vie",
+        icon="📈",
+    )
+    st.page_link(
+        "vues/02_esperance_par_age.py",
+        label="**Espérance de vie par âge** — années restant à vivre selon l'âge",
+        icon="🎚️",
+    )
+    st.page_link(
+        "vues/03_comparaison_europe.py",
+        label="**Comparaison européenne** — classement des 27 États membres",
+        icon="🇪🇺",
+    )
+with col_b:
+    st.page_link(
+        "vues/04_distribution_variance.py",
+        label="**Distribution & variance** — distribution des âges au décès",
+        icon="📐",
+    )
+    st.page_link(
+        "vues/05_explorateur_cohorte.py",
+        label="**Explorateur de cohorte** — survie par génération",
+        icon="👥",
+    )
+    st.page_link(
+        "vues/06_survie_age_donne.py",
+        label="**Survie à un âge donné** — survie à âge fixe selon la génération",
+        icon="🔄",
+    )
+    st.page_link(
+        "vues/07_personnalites.py",
+        label="**Personnalités** — âge au décès comparé à l'ensemble de la population",
+        icon="🎭",
+    )
+
+st.markdown("")
+st.info(
+    "Les données sont **régénérées depuis les API publiques** (INSEE Melodi, "
+    "Eurostat, Our World in Data) par `scripts/refresh_data.py`. La provenance "
+    "de chaque jeu — URL, paramètres, millésime, date d'extraction — est "
+    "consignée dans `data/sources/manifest.json`.\n\n"
+    "Seule la survie **par génération** reste une estimation : aucune source "
+    "ouverte ne publie de tables de mortalité par cohorte pour la France."
+)
+
+source_note()

@@ -475,7 +475,7 @@ Wikidata ──► projet deces_personnalites_FR (collecte longue, import du CSV
                                           common.py (interpolation, palette, thème)
                                                          │
                                                          ▼
-                                            pages/*.py ──► figures Plotly + métriques
+                                             vues/*.py ──► figures Plotly + métriques
 ```
 
 1. `refresh_data.py` interroge les API et écrit les CSV **et** le manifeste.

@@ -23,7 +23,9 @@ sys.path.insert(0, str(RACINE))
 
 
 def main() -> int:
-    pages = ["app.py"] + sorted(glob.glob("pages/*.py", root_dir=RACINE))
+    # accueil.py n'est pas rendu seul : ses liens exigent la navigation d'app.py,
+    # qui l'affiche comme page par défaut.
+    pages = ["app.py"] + sorted(glob.glob("vues/*.py", root_dir=RACINE))
     echecs = 0
     for page in pages:
         app = AppTest.from_file(str(RACINE / page), default_timeout=TIMEOUT).run()
