@@ -19,7 +19,7 @@
       60
     ],
     "lignes": 800,
-    "extrait_le": "2026-09-17T06:11:46+00:00"
+    "extrait_le": "2026-09-17T06:30:53+00:00"
   },
   "esperance_vie_fr_65_eurostat": {
     "fichier": "esperance_vie_fr_65_eurostat.csv",
@@ -51,7 +51,7 @@
     },
     "annees": "1816–2023",
     "lignes": 208,
-    "extrait_le": "2026-09-17T06:11:46+00:00"
+    "extrait_le": "2026-09-17T06:30:54+00:00"
   },
   "naissances_fr_insee": {
     "fichier": "naissances_fr_insee.csv",
@@ -66,7 +66,7 @@
     },
     "annees": "1901–2025",
     "lignes": 125,
-    "extrait_le": "2026-09-17T06:11:47+00:00"
+    "extrait_le": "2026-09-17T06:30:55+00:00"
   },
   "distribution_deces_eurostat": {
     "fichier": "distribution_deces_eurostat.csv",
@@ -85,7 +85,7 @@
     "millesime_source": "2026-06-04T23:00:00+0200",
     "annees": "2014–2024",
     "lignes": 22,
-    "extrait_le": "2026-09-17T06:11:47+00:00"
+    "extrait_le": "2026-09-17T06:30:55+00:00"
   },
   "esperance_vie_europe_eurostat": {
     "fichier": "esperance_vie_europe_eurostat.csv",
@@ -105,7 +105,7 @@
     "millesime_source": "2026-06-04T23:00:00+0200",
     "annee_retenue": 2024,
     "lignes": 41,
-    "extrait_le": "2026-09-17T06:11:47+00:00"
+    "extrait_le": "2026-09-17T06:30:55+00:00"
   },
   "esperance_vie_fr_tous_ages_eurostat": {
     "fichier": "esperance_vie_fr_tous_ages_eurostat.csv",
@@ -124,7 +124,7 @@
     "annees": "1998–2024",
     "ages": "0–95",
     "lignes": 4832,
-    "extrait_le": "2026-09-17T06:11:46+00:00"
+    "extrait_le": "2026-09-17T06:30:54+00:00"
   },
   "deces_par_age_eurostat": {
     "fichier": "deces_par_age_eurostat.csv",
@@ -142,7 +142,7 @@
     "millesime_source": "2026-08-14T23:00:00+0200",
     "annees": "1986–2024",
     "lignes": 7874,
-    "extrait_le": "2026-09-17T06:11:47+00:00"
+    "extrait_le": "2026-09-17T06:30:56+00:00"
   },
   "deces_personnalites_wikidata": {
     "fichier": "deces_personnalites_wikidata.csv",
@@ -156,6 +156,6 @@
     "annees": "1990–2025",
     "lignes": 27785,
     "ecartees": 1775,
-    "extrait_le": "2026-09-17T06:11:48+00:00"
+    "extrait_le": "2026-09-17T06:30:56+00:00"
   }
 }

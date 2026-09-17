@@ -433,10 +433,13 @@ def import_personnalites(chemin: Path) -> tuple[pd.DataFrame, dict]:
 
     total = len(df)
     df = df[df["age_au_deces"].notna() & df["sexe"].isin(["femme", "homme"])]
+    # Un âge exact implique une naissance connue au jour : l'année est sûre.
     out = (df.assign(year=df["annee_deces"].astype(int),
                      sexe=df["sexe"].map({"femme": "femmes", "homme": "hommes"}),
-                     age=df["age_au_deces"].astype(int))
-             [["year", "sexe", "age", "nom", "nb_editions_wikipedia", "wikidata_id"]]
+                     age=df["age_au_deces"].astype(int),
+                     annee_naissance=df["date_naissance"].str[:4].astype(int))
+             [["year", "sexe", "age", "annee_naissance", "nom",
+               "nb_editions_wikipedia", "wikidata_id"]]
              .sort_values(["year", "sexe", "nom"])
              .reset_index(drop=True))
 
