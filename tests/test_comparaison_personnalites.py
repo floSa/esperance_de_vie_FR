@@ -123,3 +123,47 @@ def test_part_apres_exclut_l_ecart_nul():
     part, mediane = repo.part_apres_et_mediane(ecarts)
     assert part == pytest.approx(0.5)
     assert mediane == pytest.approx(0.0)
+
+
+@pytest.fixture
+def nuage(monkeypatch):
+    esperance = pd.DataFrame([
+        {"year": 1990, "sexe": "hommes", "age": 60, "esperance": 20.0, "source": "insee"},
+    ])
+    personnalites = pd.DataFrame([
+        # Même naissance, même année de décès : un seul point.
+        {"year": 2010, "sexe": "hommes", "age": 80, "annee_naissance": 1930,
+         "nom": "Très connu", "nb_editions_wikipedia": 90, "wikidata_id": "Q1"},
+        {"year": 2010, "sexe": "hommes", "age": 79, "annee_naissance": 1930,
+         "nom": "Peu connu", "nb_editions_wikipedia": 2, "wikidata_id": "Q2"},
+        {"year": 2031, "sexe": "hommes", "age": 101, "annee_naissance": 1930,
+         "nom": "Centenaire", "nb_editions_wikipedia": 5, "wikidata_id": "Q3"},
+    ])
+    population = pd.DataFrame([
+        {"year": 2010, "sexe": "hommes", "age": 80, "deces": 10},
+        {"year": 2030, "sexe": "hommes", "age": 100, "deces": 999},  # classe ouverte
+    ])
+    monkeypatch.setattr(repo, "esperance_vie", lambda: esperance)
+    monkeypatch.setattr(repo, "personnalites", lambda: personnalites)
+    monkeypatch.setattr(repo, "deces_population", lambda: population)
+    monkeypatch.setattr(repo, "MIN_PERSONNALITES_PAR_NAISSANCE", 1)
+
+
+def test_un_point_par_naissance_et_deces(nuage):
+    points = repo.points_personnalites("hommes", 2000, 2040)
+    groupe = points[(points["annee_naissance"] == 1930) & (points["year"] == 2010)].iloc[0]
+    assert groupe["nb"] == 2
+    # Les plus connues d'abord, écart formaté à la française.
+    assert groupe["noms"].startswith("Très connu — 80 ans (+0,0)")
+    assert len(points) == 2
+
+
+def test_courbes_par_naissance_sans_classe_ouverte(nuage):
+    pop = repo.age_moyen_population_par_naissance("hommes", 2000, 2040)
+    # La classe « 100 ans et plus » n'a ni âge ni naissance exacts : écartée.
+    assert pop["annee_naissance"].tolist() == [1930]
+    assert pop["age_moyen"].iloc[0] == pytest.approx(80.0)
+    pers = repo.age_moyen_personnalites_par_naissance("hommes", 2000, 2040)
+    # Même règle côté personnalités : le centenaire ne compte pas.
+    assert pers["age_moyen"].iloc[0] == pytest.approx(79.5)
+    assert pers["nb"].iloc[0] == 2
