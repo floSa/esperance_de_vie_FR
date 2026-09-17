@@ -211,6 +211,18 @@ def annee_europe() -> int:
 # Personnalités et population
 # ---------------------------------------------------------------------------
 
+# « tous » réunit femmes et hommes : les effectifs de population s'additionnent,
+# et chaque personnalité garde l'âge prédit de son propre sexe.
+TOUS = "tous"
+
+
+def _du_sexe(df: pd.DataFrame, sexe: str) -> pd.Series:
+    """Masque de sélection d'un sexe, ou de tous les individus."""
+    if sexe == TOUS:
+        return pd.Series(True, index=df.index)
+    return df["sexe"] == sexe
+
+
 # On devient rarement célèbre avant l'âge adulte. Compter les décès d'enfants
 # dans la population, et pas chez les personnalités, abaisserait artificiellement
 # l'âge moyen au décès de la population.
@@ -245,9 +257,9 @@ def comparaison_age_deces(sexe: str, age_min: int = AGE_ADULTE) -> pd.DataFrame:
     pers = personnalites()
     debut, fin = annees_communes()
 
-    pop = pop[(pop["sexe"] == sexe) & (pop["age"] >= age_min)
+    pop = pop[_du_sexe(pop, sexe) & (pop["age"] >= age_min)
               & pop["year"].between(debut, fin)].copy()
-    pers = pers[(pers["sexe"] == sexe) & (pers["age"] >= age_min)
+    pers = pers[_du_sexe(pers, sexe) & (pers["age"] >= age_min)
                 & pers["year"].between(debut, fin)].copy()
     pop["periode"] = _periode(pop["year"], debut)
     pers["periode"] = _periode(pers["year"], debut)
@@ -270,8 +282,8 @@ def bilan_age_deces(sexe: str, age_min: int = AGE_ADULTE) -> dict:
     """Moyennes sur toute la période commune aux deux sources."""
     pop, pers = deces_population(), personnalites()
     debut, fin = annees_communes()
-    pop = pop[(pop["sexe"] == sexe) & (pop["age"] >= age_min) & pop["year"].between(debut, fin)]
-    pers = pers[(pers["sexe"] == sexe) & (pers["age"] >= age_min)
+    pop = pop[_du_sexe(pop, sexe) & (pop["age"] >= age_min) & pop["year"].between(debut, fin)]
+    pers = pers[_du_sexe(pers, sexe) & (pers["age"] >= age_min)
                 & pers["year"].between(debut, fin)]
     moy_pop = float((pop["age"] * pop["deces"]).sum() / pop["deces"].sum())
     moy_pers = float(pers["age"].mean())
@@ -317,7 +329,7 @@ def ecarts_personnalites(sexe: str, debut: int, fin: int) -> tuple[pd.DataFrame,
     60 ans, qui n'ont pas d'âge prédit.
     """
     pers = personnalites()
-    pers = pers[(pers["sexe"] == sexe) & pers["year"].between(debut, fin)]
+    pers = pers[_du_sexe(pers, sexe) & pers["year"].between(debut, fin)]
     avant_60 = int((pers["age"] < AGE_PREDICTION).sum())
     pers = pers[pers["age"] >= AGE_PREDICTION].assign(
         annee_60=lambda d: d["annee_naissance"] + AGE_PREDICTION)
@@ -335,7 +347,7 @@ def ecarts_population(sexe: str, debut: int, fin: int) -> pd.DataFrame:
     il est de toute façon positif.
     """
     pop = deces_population()
-    pop = pop[(pop["sexe"] == sexe) & pop["year"].between(debut, fin)
+    pop = pop[_du_sexe(pop, sexe) & pop["year"].between(debut, fin)
               & (pop["age"] >= AGE_PREDICTION)]
     pop = pop.assign(annee_60=pop["year"] - pop["age"] + AGE_PREDICTION)
     out = pop.merge(_esperance_a_60(), on=["annee_60", "sexe"], how="inner")
@@ -363,7 +375,7 @@ def points_personnalites(sexe: str, debut: int, fin: int, noms_max: int = 6) -> 
     il vaut NaN pour un point formé de décès plus précoces.
     """
     pers = personnalites()
-    pers = pers[(pers["sexe"] == sexe) & pers["year"].between(debut, fin)
+    pers = pers[_du_sexe(pers, sexe) & pers["year"].between(debut, fin)
                 & (pers["age"] >= AGE_ADULTE)]
     pers = pers.assign(annee_60=pers["annee_naissance"] + AGE_PREDICTION)
     pers = pers.merge(_esperance_a_60(), on=["annee_60", "sexe"], how="left")
@@ -398,13 +410,13 @@ def age_moyen_par_annee_deces(sexe: str, debut: int, fin: int,
     comparaison.
     """
     pop = deces_population()
-    pop = pop[(pop["sexe"] == sexe) & pop["year"].between(debut, fin) & (pop["age"] >= age_min)]
+    pop = pop[_du_sexe(pop, sexe) & pop["year"].between(debut, fin) & (pop["age"] >= age_min)]
     cote_pop = (pop.assign(age_x=pop["age"] * pop["deces"])
                    .groupby("year").agg(age_x=("age_x", "sum"), deces=("deces", "sum")))
     cote_pop["age_moyen_population"] = cote_pop["age_x"] / cote_pop["deces"]
 
     pers = personnalites()
-    pers = pers[(pers["sexe"] == sexe) & pers["year"].between(debut, fin) & (pers["age"] >= age_min)]
+    pers = pers[_du_sexe(pers, sexe) & pers["year"].between(debut, fin) & (pers["age"] >= age_min)]
     cote_pers = pers.groupby("year").agg(age_moyen_personnalites=("age", "mean"),
                                          nb_personnalites=("age", "size"))
     return (cote_pop[["age_moyen_population"]].join(cote_pers, how="inner")
@@ -425,7 +437,7 @@ def age_moyen_population_par_naissance(sexe: str, debut: int, fin: int) -> pd.Da
     génération récente que par ceux déjà morts en `fin`.
     """
     pop = deces_population()
-    pop = pop[(pop["sexe"] == sexe) & pop["year"].between(debut, fin)
+    pop = pop[_du_sexe(pop, sexe) & pop["year"].between(debut, fin)
               & pop["age"].between(AGE_PREDICTION, AGE_CLASSE_OUVERTE - 1)]
     pop = pop.assign(annee_naissance=pop["year"] - pop["age"],
                      age_x_deces=pop["age"] * pop["deces"])
@@ -437,9 +449,11 @@ def age_moyen_population_par_naissance(sexe: str, debut: int, fin: int) -> pd.Da
 
 def age_predit_par_naissance(sexe: str) -> pd.DataFrame:
     e = _esperance_a_60()
-    e = e[e["sexe"] == sexe]
-    return pd.DataFrame({"annee_naissance": e["annee_60"] - AGE_PREDICTION,
-                         "age_predit": AGE_PREDICTION + e["e60"]}).sort_values("annee_naissance")
+    e = e[_du_sexe(e, sexe)]
+    return pd.DataFrame({"sexe": e["sexe"],
+                         "annee_naissance": e["annee_60"] - AGE_PREDICTION,
+                         "age_predit": AGE_PREDICTION + e["e60"]}).sort_values(
+                             ["sexe", "annee_naissance"])
 
 
 # En dessous, la moyenne d'une année de naissance repose sur trop peu de
@@ -470,7 +484,7 @@ def boites_population_par_annee_deces(sexe: str, debut: int, fin: int,
     « 100 ans et plus » compte pour 100 ans, ce qui borne la moustache haute.
     """
     pop = deces_population()
-    pop = pop[(pop["sexe"] == sexe) & pop["year"].between(debut, fin)
+    pop = pop[_du_sexe(pop, sexe) & pop["year"].between(debut, fin)
               & (pop["age"] >= age_min) & (pop["deces"] > 0)]
     lignes = []
     for annee, groupe in pop.groupby("year"):
@@ -493,5 +507,29 @@ def personnalites_par_annee_deces(sexe: str, debut: int, fin: int,
                                   age_min: int = AGE_ADULTE) -> pd.DataFrame:
     """Une ligne par personnalité morte à `age_min` ans ou plus, pour les boîtes."""
     pers = personnalites()
-    return pers[(pers["sexe"] == sexe) & pers["year"].between(debut, fin)
+    return pers[_du_sexe(pers, sexe) & pers["year"].between(debut, fin)
                 & (pers["age"] >= age_min)].reset_index(drop=True)
+
+
+def ecart_moyen_par_periode(sexe: str) -> pd.DataFrame:
+    """Barycentre des écarts à l'âge prédit, par période de 5 ans.
+
+    Écart moyen des personnalités, avec son intervalle de confiance à 95 %, et
+    écart moyen de l'ensemble pondéré par les décès. Un écart positif signifie
+    un décès en moyenne après l'âge prédit.
+    """
+    lignes = []
+    for debut, fin, libelle in periodes_communes():
+        pers, _ = ecarts_personnalites(sexe, debut, fin)
+        pop = ecarts_population(sexe, debut, fin)
+        if pers.empty or pop.empty:
+            continue
+        n = len(pers)
+        marge = 1.96 * float(pers["ecart"].std(ddof=1)) / np.sqrt(n) if n > 1 else float("nan")
+        lignes.append({
+            "periode": debut, "libelle": libelle, "nb_personnalites": n,
+            "ecart_moyen_personnalites": float(pers["ecart"].mean()),
+            "marge_ic95": marge,
+            "ecart_moyen_population": float(np.average(pop["ecart"], weights=pop["deces"])),
+        })
+    return pd.DataFrame(lignes)

@@ -224,3 +224,53 @@ def test_boites_population_ponderees(monkeypatch):
     assert boite["moustache_basse"] == 70.0
     assert boite["moustache_haute"] == 80.0
     assert boite["moyenne"] == pytest.approx((30 * 10 + 70 * 40 + 80 * 40 + 99 * 10) / 100)
+
+
+@pytest.fixture
+def deux_sexes(monkeypatch):
+    esperance = pd.DataFrame([
+        {"year": 1990, "sexe": "femmes", "age": 60, "esperance": 25.0, "source": "insee"},
+        {"year": 1990, "sexe": "hommes", "age": 60, "esperance": 20.0, "source": "insee"},
+    ])
+    personnalites = pd.DataFrame([
+        {"year": 2012, "sexe": "femmes", "age": 90, "annee_naissance": 1930, "nom": "F",
+         "nb_editions_wikipedia": 1},
+        {"year": 2012, "sexe": "hommes", "age": 80, "annee_naissance": 1930, "nom": "H",
+         "nb_editions_wikipedia": 1},
+    ])
+    population = pd.DataFrame([
+        # Nés en 1930 (60 ans en 1990), morts en 2012.
+        {"year": 2012, "sexe": "femmes", "age": 82, "deces": 100},
+        {"year": 2012, "sexe": "hommes", "age": 82, "deces": 300},
+    ])
+    monkeypatch.setattr(repo, "esperance_vie", lambda: esperance)
+    monkeypatch.setattr(repo, "personnalites", lambda: personnalites)
+    monkeypatch.setattr(repo, "deces_population", lambda: population)
+    monkeypatch.setattr(repo, "annees_communes", lambda: (2010, 2014))
+
+
+def test_tous_garde_l_age_predit_de_chaque_sexe(deux_sexes):
+    ecarts, _ = repo.ecarts_personnalites(repo.TOUS, 2010, 2014)
+    ecarts = ecarts.set_index("nom")
+    # Femme : 60 + 25 = 85, morte à 90 → +5. Homme : 60 + 20 = 80, mort à 80 → 0.
+    assert ecarts.loc["F", "ecart"] == pytest.approx(5.0)
+    assert ecarts.loc["H", "ecart"] == pytest.approx(0.0)
+
+
+def test_tous_additionne_les_deces_de_la_population(deux_sexes):
+    pop = repo.ecarts_population(repo.TOUS, 2010, 2014)
+    assert pop["deces"].sum() == 400
+    bilan = repo.bilan_age_deces(repo.TOUS)
+    assert bilan["population"] == pytest.approx(82.0)
+    assert bilan["nb_personnalites"] == 2
+
+
+def test_barycentre_par_periode(deux_sexes):
+    periode = repo.ecart_moyen_par_periode(repo.TOUS).iloc[0]
+    assert periode["libelle"] == "2010–2014"
+    # Personnalités : moyenne de +5 et 0.
+    assert periode["ecart_moyen_personnalites"] == pytest.approx(2.5)
+    # Population pondérée : femmes 82 − 85 = −3 (100 décès), hommes 82 − 80 = +2 (300).
+    assert periode["ecart_moyen_population"] == pytest.approx((-3 * 100 + 2 * 300) / 400)
+    # Intervalle à 95 % : 1,96 × écart-type / √n.
+    assert periode["marge_ic95"] == pytest.approx(1.96 * pd.Series([5.0, 0.0]).std() / 2 ** 0.5)
