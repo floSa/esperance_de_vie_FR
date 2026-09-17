@@ -150,34 +150,29 @@ st.caption(
     "Écart : âge au décès moins âge prédit."
 )
 
-debut_commun, fin_commun = repo.annees_communes()
-choix_periodes = {f"Toutes ({debut_commun}–{fin_commun})": (debut_commun, fin_commun)}
-choix_periodes.update({lib: (a, b) for a, b, lib in repo.periodes_communes()})
-persist("periode_prediction", next(iter(choix_periodes)))
-col_periode, _ = st.columns([1, 3])
-with col_periode:
-    periode = st.selectbox("Période de décès", list(choix_periodes), key="periode_prediction")
-p_debut, p_fin = choix_periodes[periode]
+p_debut, p_fin = repo.annees_communes()
 
 ecarts, morts_avant_60 = repo.ecarts_personnalites(sexe, p_debut, p_fin)
 ecarts_pop = repo.ecarts_population(sexe, p_debut, p_fin)
 part_pers, med_pers = repo.part_apres_et_mediane(ecarts["ecart"])
 part_pop, med_pop = repo.part_apres_et_mediane(ecarts_pop["ecart"], ecarts_pop["deces"])
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Personnalités décédées après l'âge prédit", pct(part_pers))
-c2.metric(f"{population} {morts} après l'âge prédit", pct(part_pop))
-c3.metric("Écart médian, personnalités", signe_ans(med_pers))
-c4.metric(f"Écart médian, {population_dans_phrase}", signe_ans(med_pop))
+c1, c2, c3 = st.columns(3)
+c1.metric("Décès après l'âge prédit", pct(part_pers),
+          delta=f"{population_dans_phrase} : {pct(part_pop)}", delta_color="off", delta_arrow="off",
+          help="Part des personnalités décédées après leur âge prédit")
+c2.metric("Écart médian à l'âge prédit", signe_ans(med_pers),
+          delta=f"{population_dans_phrase} : {signe_ans(med_pop)}", delta_color="off", delta_arrow="off",
+          help="Écart médian des personnalités")
+c3.metric("Personnalités comparées", fr_num(len(ecarts), 0))
 st.caption(
-    f"{fr_num(len(ecarts), 0)} personnalités comparées. "
-    f"{fr_num(morts_avant_60, 0)} personnalités décédées avant {AGE_PREDICTION} ans "
-    "n'ont pas d'âge prédit."
+    f"{fr_num(morts_avant_60, 0)} personnalités décédées avant {AGE_PREDICTION} ans, "
+    "sans âge prédit, ne sont pas comparées."
 )
 
 # --- 2.1 Nuage par année de décès -------------------------------------------
 
-st.markdown(f"#### Âge au décès par année de décès — {periode}")
+st.markdown("#### Âge au décès par année de décès")
 
 points = repo.points_personnalites(sexe, p_debut, p_fin)
 lignes_annee = repo.age_moyen_par_annee_deces(sexe, p_debut, p_fin)
@@ -189,7 +184,7 @@ for nom_trace, masque, teinte in (
     (f"Décès avant {AGE_PREDICTION} ans, sans âge prédit", points["ecart"].isna(), GRIS_POINT),
 ):
     sous = points[masque]
-    fig_n.add_trace(go.Scattergl(
+    fig_n.add_trace(go.Scatter(
         x=sous["year"], y=sous["age"], mode="markers", name=nom_trace,
         marker=dict(color=teinte, opacity=0.4,
                     size=np.clip(4 + 2.2 * np.sqrt(sous["nb"]), 5, 22), line=dict(width=0)),
@@ -252,7 +247,7 @@ note_lecture(
 
 # --- 2.2 Boîtes à moustaches par année de décès -----------------------------
 
-st.markdown(f"#### Distribution annuelle de l'âge au décès des personnalités — {periode}")
+st.markdown("#### Distribution annuelle de l'âge au décès des personnalités")
 
 boites_pop = repo.boites_population_par_annee_deces(sexe, p_debut, p_fin)
 pers_annee = repo.personnalites_par_annee_deces(sexe, p_debut, p_fin)
@@ -356,7 +351,7 @@ download_csv(barycentres, f"personnalites_ecart_moyen_{sexe}")
 
 # --- 2.4 Nuage par année de naissance ---------------------------------------
 
-st.markdown(f"#### Âge au décès par année de naissance — {periode}")
+st.markdown("#### Âge au décès par année de naissance")
 
 points_n = points[points["ecart"].notna()].assign(
     age_atteint=lambda d: d["year"] - d["annee_naissance"])
@@ -384,7 +379,7 @@ for bordure, remplissage, legende in (
 for nom_trace, masque, teinte in (("Décès après l'âge prédit", points_n["ecart"] > 0, VERT),
                                   ("Décès avant l'âge prédit", points_n["ecart"] <= 0, ROUGE)):
     sous = points_n[masque]
-    fig_nais.add_trace(go.Scattergl(
+    fig_nais.add_trace(go.Scatter(
         x=sous["annee_naissance"], y=sous["age_atteint"], mode="markers", name=nom_trace,
         marker=dict(color=teinte, opacity=0.35,
                     size=np.clip(4 + 2.2 * np.sqrt(sous["nb"]), 5, 22), line=dict(width=0)),
@@ -452,7 +447,7 @@ note_lecture(
 
 # --- 2.5 Répartition des écarts ---------------------------------------------
 
-st.markdown(f"#### Répartition des écarts à l'âge prédit — {periode}")
+st.markdown("#### Répartition des écarts à l'âge prédit")
 
 LARGEUR = 2
 bornes = np.arange(-30, 38 + LARGEUR, LARGEUR)
