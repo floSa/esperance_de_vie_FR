@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import io
 from datetime import UTC, datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -353,6 +354,101 @@ def fetch_eurostat_death_distribution() -> tuple[pd.DataFrame, dict]:
         "millesime_source": updated,
         "annees": f"{out['year'].min()}–{out['year'].max()}",
         "lignes": len(out),
+        "extrait_le": _now(),
+    }
+
+
+# Eurostat ne publie les décès de « France entière » (FR) qu'à partir de 1998 ;
+# avant, seule la France métropolitaine (FX) est disponible.
+ANNEE_BASCULE_FR = 1998
+
+
+def fetch_eurostat_deaths_by_age() -> tuple[pd.DataFrame, dict]:
+    """Décès réellement enregistrés, par année, sexe et âge.
+
+    C'est le point de comparaison juste pour l'âge au décès des personnalités :
+    les deux décrivent des personnes mortes la même année. L'espérance de vie
+    à la naissance, elle, décrit une génération fictive et inclut les enfants.
+
+    Deux périmètres s'enchaînent : France métropolitaine jusqu'en 1997, France
+    entière ensuite. Les DOM pèsent environ 2 % des décès : la rupture est
+    faible, mais elle est documentée.
+    """
+    morceaux, millesimes = [], []
+    for geo, garder in (("FX", lambda a: a < ANNEE_BASCULE_FR),
+                        ("FR", lambda a: a >= ANNEE_BASCULE_FR)):
+        df, updated = _jsonstat("demo_magec", {"geo": geo, "sex": ["F", "M"]})
+        millesimes.append(updated)
+        df["year"] = df["time"].astype(int)
+        df = df[df["year"].map(garder)]
+        df["age_num"] = pd.to_numeric(
+            df["age"].str.replace("Y_LT1", "0", regex=False)
+                     .str.replace("Y_OPEN", "100", regex=False)
+                     .str.removeprefix("Y"),
+            errors="coerce",
+        )
+        # TOTAL et UNK (âge inconnu) tombent ici, faute d'âge numérique.
+        df = df.dropna(subset=["age_num", "value"])
+        df["perimetre"] = "France métropolitaine" if geo == "FX" else "France entière"
+        morceaux.append(df)
+
+    brut = pd.concat(morceaux, ignore_index=True)
+    out = (brut.assign(sexe=brut["sex"].map({"F": "femmes", "M": "hommes"}),
+                       age=brut["age_num"].astype(int),
+                       deces=brut["value"].astype(int))
+               [["year", "sexe", "age", "deces", "perimetre"]]
+               .sort_values(["sexe", "year", "age"])
+               .reset_index(drop=True))
+    if out.empty:
+        raise SourceError("Eurostat demo_magec : aucun décès exploitable")
+
+    return out, {
+        "libelle": "Décès enregistrés par année, sexe et âge (100 = 100 ans et plus)",
+        "fournisseur": "Eurostat",
+        "jeu": "demo_magec",
+        "url": f"{EUROSTAT}/demo_magec",
+        "parametres": {"geo": f"FX avant {ANNEE_BASCULE_FR}, FR ensuite",
+                       "sex": ["F", "M"]},
+        "millesime_source": max(millesimes),
+        "annees": f"{out['year'].min()}–{out['year'].max()}",
+        "lignes": len(out),
+        "extrait_le": _now(),
+    }
+
+
+def import_personnalites(chemin: Path) -> tuple[pd.DataFrame, dict]:
+    """Décès de personnalités françaises, produits par le projet de collecte Wikidata.
+
+    La collecte prend une demi-heure et plus : elle vit dans son propre projet
+    (`deces_personnalites_FR`). Ce projet-ci n'en importe que les colonnes
+    utiles à la comparaison, et ne garde que les âges calculés sur des dates
+    connues au jour près.
+    """
+    if not chemin.exists():
+        raise SourceError(f"{chemin} absent — lancez d'abord la collecte Wikidata")
+    df = pd.read_csv(chemin, dtype={"age_au_deces": "Int64"})
+    manquantes = {"annee_deces", "sexe", "age_au_deces"} - set(df.columns)
+    if manquantes:
+        raise SourceError(f"{chemin.name} : colonnes absentes {sorted(manquantes)}")
+
+    total = len(df)
+    df = df[df["age_au_deces"].notna() & df["sexe"].isin(["femme", "homme"])]
+    out = (df.assign(year=df["annee_deces"].astype(int),
+                     sexe=df["sexe"].map({"femme": "femmes", "homme": "hommes"}),
+                     age=df["age_au_deces"].astype(int))
+             [["year", "sexe", "age", "nom", "nb_editions_wikipedia", "wikidata_id"]]
+             .sort_values(["year", "sexe", "nom"])
+             .reset_index(drop=True))
+
+    return out, {
+        "libelle": "Décès de personnalités de nationalité française (âge exact connu)",
+        "fournisseur": "Wikidata, via le projet deces_personnalites_FR",
+        "jeu": chemin.name,
+        "url": "https://query.wikidata.org/sparql",
+        "parametres": {"filtre": "âge au décès calculable au jour près, sexe femme ou homme"},
+        "annees": f"{out['year'].min()}–{out['year'].max()}",
+        "lignes": len(out),
+        "ecartees": total - len(out),
         "extrait_le": _now(),
     }
 

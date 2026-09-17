@@ -30,7 +30,14 @@ OPEN_DATASETS = {
     "naissances_fr_insee": sources.fetch_insee_births,
     "distribution_deces_eurostat": sources.fetch_eurostat_death_distribution,
     "esperance_vie_europe_eurostat": sources.fetch_eurostat_europe,
+    "deces_par_age_eurostat": sources.fetch_eurostat_deaths_by_age,
 }
+
+# Produit par le projet voisin de collecte Wikidata, trop long pour être relancé
+# ici à chaque rafraîchissement.
+PERSONNALITES_PAR_DEFAUT = (Path(__file__).resolve().parents[2]
+                            / "deces_personnalites_FR" / "data"
+                            / "deces_personnalites_fr_1990_2025.csv")
 
 
 def write(name: str, df, provenance: dict, manifest: dict) -> None:
@@ -46,6 +53,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--hmd", action="store_true",
                         help="ajoute les tables HMD (HMD_USER / HMD_PASSWORD requis)")
+    parser.add_argument("--personnalites", type=Path, default=PERSONNALITES_PAR_DEFAUT,
+                        help="CSV consolidé du projet deces_personnalites_FR")
     args = parser.parse_args()
 
     manifest: dict = {}
@@ -59,6 +68,14 @@ def main() -> int:
         except SourceError as e:
             echecs.append(name)
             print(f"  ÉCHEC  {name} : {e}", file=sys.stderr)
+
+    print("\nPersonnalités (projet deces_personnalites_FR)")
+    try:
+        df, provenance = sources.import_personnalites(args.personnalites)
+        write("deces_personnalites_wikidata", df, provenance, manifest)
+    except SourceError as e:
+        echecs.append("deces_personnalites_wikidata")
+        print(f"  ÉCHEC  personnalités : {e}", file=sys.stderr)
 
     if args.hmd:
         print("\nHuman Mortality Database")
