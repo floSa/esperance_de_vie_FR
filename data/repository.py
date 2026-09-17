@@ -242,8 +242,7 @@ def comparaison_age_deces(sexe: str, age_min: int = AGE_ADULTE) -> pd.DataFrame:
     """
     pop = deces_population()
     pers = personnalites()
-    debut = max(int(pop["year"].min()), int(pers["year"].min()))
-    fin = min(int(pop["year"].max()), int(pers["year"].max()))
+    debut, fin = annees_communes()
 
     pop = pop[(pop["sexe"] == sexe) & (pop["age"] >= age_min)
               & pop["year"].between(debut, fin)].copy()
@@ -269,8 +268,7 @@ def comparaison_age_deces(sexe: str, age_min: int = AGE_ADULTE) -> pd.DataFrame:
 def bilan_age_deces(sexe: str, age_min: int = AGE_ADULTE) -> dict:
     """Moyennes sur toute la période commune aux deux sources."""
     pop, pers = deces_population(), personnalites()
-    debut = max(int(pop["year"].min()), int(pers["year"].min()))
-    fin = min(int(pop["year"].max()), int(pers["year"].max()))
+    debut, fin = annees_communes()
     pop = pop[(pop["sexe"] == sexe) & (pop["age"] >= age_min) & pop["year"].between(debut, fin)]
     pers = pers[(pers["sexe"] == sexe) & (pers["age"] >= age_min)
                 & pers["year"].between(debut, fin)]
@@ -279,3 +277,78 @@ def bilan_age_deces(sexe: str, age_min: int = AGE_ADULTE) -> dict:
     return {"debut": debut, "fin": fin, "population": moy_pop,
             "personnalites": moy_pers, "ecart": moy_pers - moy_pop,
             "nb_personnalites": len(pers)}
+
+
+# ---------------------------------------------------------------------------
+# Personnalités : écart à l'âge de décès prédit
+# ---------------------------------------------------------------------------
+
+# L'âge prédit se calcule à 60 ans et non à la naissance : l'INSEE ne publie
+# l'espérance de vie qu'à partir de 1946, et celle à la naissance compte les
+# décès d'enfants, auxquels toute personnalité a par définition survécu.
+AGE_PREDICTION = 60
+
+
+def annees_communes() -> tuple[int, int]:
+    """Années couvertes à la fois par les décès Eurostat et par les personnalités."""
+    pop, pers = deces_population(), personnalites()
+    return (max(int(pop["year"].min()), int(pers["year"].min())),
+            min(int(pop["year"].max()), int(pers["year"].max())))
+
+
+def periodes_communes() -> list[tuple[int, int, str]]:
+    debut, fin = annees_communes()
+    return [(a, min(a + DUREE_PERIODE - 1, fin), f"{a}–{min(a + DUREE_PERIODE - 1, fin)}")
+            for a in range(debut, fin + 1, DUREE_PERIODE)]
+
+
+def _esperance_a_60() -> pd.DataFrame:
+    e = esperance_vie()
+    e = e[(e["age"] == AGE_PREDICTION) & (e["source"] == "insee")]
+    return e.rename(columns={"year": "annee_60", "esperance": "e60"})[["annee_60", "sexe", "e60"]]
+
+
+def ecarts_personnalites(sexe: str, debut: int, fin: int) -> tuple[pd.DataFrame, int]:
+    """Âge au décès face à l'âge prédit, personnalité par personnalité.
+
+    Âge prédit = 60 + espérance de vie à 60 ans, l'année où la personne a eu
+    60 ans, pour son sexe. Renvoie aussi le nombre de personnalités mortes avant
+    60 ans, qui n'ont pas d'âge prédit.
+    """
+    pers = personnalites()
+    pers = pers[(pers["sexe"] == sexe) & pers["year"].between(debut, fin)]
+    avant_60 = int((pers["age"] < AGE_PREDICTION).sum())
+    pers = pers[pers["age"] >= AGE_PREDICTION].assign(
+        annee_60=lambda d: d["annee_naissance"] + AGE_PREDICTION)
+    out = pers.merge(_esperance_a_60(), on=["annee_60", "sexe"], how="inner")
+    out["age_predit"] = AGE_PREDICTION + out["e60"]
+    out["ecart"] = out["age"] - out["age_predit"]
+    return out.reset_index(drop=True), avant_60
+
+
+def ecarts_population(sexe: str, debut: int, fin: int) -> pd.DataFrame:
+    """Même calcul sur tous les décès enregistrés, pondéré par le nombre de décès.
+
+    L'année des 60 ans se déduit de l'année et de l'âge au décès. Le groupe
+    « 100 ans et plus » est gardé à 100 ans : son écart est sous-estimé, mais
+    il est de toute façon positif.
+    """
+    pop = deces_population()
+    pop = pop[(pop["sexe"] == sexe) & pop["year"].between(debut, fin)
+              & (pop["age"] >= AGE_PREDICTION)]
+    pop = pop.assign(annee_60=pop["year"] - pop["age"] + AGE_PREDICTION)
+    out = pop.merge(_esperance_a_60(), on=["annee_60", "sexe"], how="inner")
+    out["ecart"] = out["age"] - (AGE_PREDICTION + out["e60"])
+    return out.reset_index(drop=True)
+
+
+def part_apres_et_mediane(ecarts: pd.Series, poids: pd.Series | None = None) -> tuple[float, float]:
+    """Part des décès survenus après l'âge prédit, et écart médian."""
+    if poids is None:
+        poids = pd.Series(1, index=ecarts.index)
+    total = float(poids.sum())
+    part = float(poids[ecarts > 0].sum()) / total
+    ordre = ecarts.sort_values()
+    cumul = poids.loc[ordre.index].cumsum() / total
+    mediane = float(ordre[cumul >= 0.5].iloc[0])
+    return part, mediane

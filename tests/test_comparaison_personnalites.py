@@ -68,3 +68,58 @@ def test_bilan_coherent_avec_les_periodes(donnees):
     assert bilan["personnalites"] == pytest.approx((70 + 90 + 72) / 3)
     assert bilan["nb_personnalites"] == 3
     assert bilan["ecart"] == pytest.approx(bilan["personnalites"] - bilan["population"])
+
+
+@pytest.fixture
+def prediction(monkeypatch):
+    esperance = pd.DataFrame([
+        {"year": 1960, "sexe": "hommes", "age": 60, "esperance": 15.0, "source": "insee"},
+        {"year": 1970, "sexe": "hommes", "age": 60, "esperance": 17.0, "source": "insee"},
+        # Même année, autre source : ne doit pas être utilisée.
+        {"year": 1960, "sexe": "hommes", "age": 60, "esperance": 99.0, "source": "eurostat"},
+    ])
+    personnalites = pd.DataFrame([
+        {"year": 1995, "sexe": "hommes", "age": 95, "annee_naissance": 1900, "nom": "A"},
+        {"year": 1990, "sexe": "hommes", "age": 70, "annee_naissance": 1910, "nom": "B"},
+        {"year": 1992, "sexe": "hommes", "age": 45, "annee_naissance": 1947, "nom": "C"},
+    ])
+    population = pd.DataFrame([
+        # Mort en 1990 à 90 ans → 60 ans en 1960 → âge prédit 75 → écart +15.
+        {"year": 1990, "sexe": "hommes", "age": 90, "deces": 100},
+        # Mort en 1990 à 80 ans → 60 ans en 1970 → âge prédit 77 → écart +3.
+        {"year": 1990, "sexe": "hommes", "age": 80, "deces": 300},
+        # Trop jeune pour une prédiction à 60 ans.
+        {"year": 1990, "sexe": "hommes", "age": 50, "deces": 1000},
+    ])
+    monkeypatch.setattr(repo, "esperance_vie", lambda: esperance)
+    monkeypatch.setattr(repo, "personnalites", lambda: personnalites)
+    monkeypatch.setattr(repo, "deces_population", lambda: population)
+
+
+def test_age_predit_pris_l_annee_des_60_ans(prediction):
+    ecarts, avant_60 = repo.ecarts_personnalites("hommes", 1990, 1999)
+    ecarts = ecarts.set_index("nom")
+    # A : né en 1900, 60 ans en 1960 → 60 + 15 = 75, mort à 95 → +20.
+    assert ecarts.loc["A", "age_predit"] == pytest.approx(75.0)
+    assert ecarts.loc["A", "ecart"] == pytest.approx(20.0)
+    # B : né en 1910, 60 ans en 1970 → 60 + 17 = 77, mort à 70 → −7.
+    assert ecarts.loc["B", "ecart"] == pytest.approx(-7.0)
+    # C, mort à 45 ans, n'a pas d'âge prédit : compté à part.
+    assert "C" not in ecarts.index
+    assert avant_60 == 1
+
+
+def test_population_meme_calcul_pondere(prediction):
+    pop = repo.ecarts_population("hommes", 1990, 1990)
+    assert sorted(pop["ecart"].round(6)) == [3.0, 15.0]
+    part, mediane = repo.part_apres_et_mediane(pop["ecart"], pop["deces"])
+    assert part == pytest.approx(1.0)
+    # 300 décès à +3 contre 100 à +15 : la médiane pondérée est +3.
+    assert mediane == pytest.approx(3.0)
+
+
+def test_part_apres_exclut_l_ecart_nul():
+    ecarts = pd.Series([-2.0, 0.0, 1.0, 4.0])
+    part, mediane = repo.part_apres_et_mediane(ecarts)
+    assert part == pytest.approx(0.5)
+    assert mediane == pytest.approx(0.0)
