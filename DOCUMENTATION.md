@@ -257,31 +257,28 @@ par le nombre de décès. Le groupe « 100 ans et plus » est gardé à 100 ans.
 > leur âge prédit. Sans cette référence, « 67 % après la prédiction » ferait
 > croire à un effet bien plus fort qu'il n'est.
 
-### 3.8 Nuage de points par année de naissance — `points_personnalites`
+### 3.8 Nuage de points par année de décès — `points_personnalites`
 
-Chaque personnalité se place en $(n, a)$ : année de naissance, âge au décès.
-Celles qui partagent la même année de naissance **et** la même année de décès
-forment un seul point, dont la taille croît avec leur nombre ; le survol liste
-les plus connues (6 au plus) avec leur écart à l'âge prédit.
+Chaque personnalité morte à 25 ans ou plus se place en $(t, a)$ : année de
+décès, âge au décès. Celles qui partagent la même année de décès **et** la même
+année de naissance forment un seul point, dont la taille croît avec leur nombre ;
+le survol liste les plus connues (6 au plus) avec leur écart à l'âge prédit.
+La couleur indique la position par rapport à l'âge prédit (§ 3.7), et un point
+formé de décès avant 60 ans, sans âge prédit, est gris.
 
-**Effet de fenêtre.** Seuls les décès survenus entre $t_0$ et $t_1$ sont
-observés, donc pour une génération $n$ seuls les âges $a \in [t_0 - n,\; t_1 - n]$
-sont visibles. Une génération ancienne n'apparaît qu'à travers ceux morts très
-vieux, une génération récente qu'à travers ceux morts jeunes. Les zones hors de
-cette bande sont grisées sur le graphique : c'est ce qui explique que les points
-soient majoritairement verts à gauche et rouges à droite, sans lien avec la
-célébrité.
+Deux lignes l'accompagnent (`age_moyen_par_annee_deces`) : l'âge moyen au décès
+des personnalités mortes l'année $t$, et celui de l'ensemble des Français morts
+la même année, décès à 25 ans ou plus dans les deux cas — le même calcul que
+§ 3.6, année par année.
 
-La comparaison juste se fait donc entre deux courbes soumises au même effet :
+> **Décision** — *Année de décès en abscisse* **plutôt qu'**année de naissance,
+> **parce que** chaque année de décès est observée en entier, à tous les âges.
+> Par année de naissance, seuls les décès de la période 1990–2024 sont visibles :
+> les générations anciennes n'y apparaissent que par leurs grands âges et les
+> récentes que par leurs décès précoces, ce qui colorait artificiellement le
+> nuage (vert à gauche, rouge à droite).
 
-$$\bar{a}_{\text{pers}}(n) \quad\text{et}\quad \bar{a}_{\text{pop}}(n) = \dfrac{\sum_{t=t_0}^{t_1} (t - n)\, D_{t,\,t-n}}{\sum_{t=t_0}^{t_1} D_{t,\,t-n}}, \qquad 60 \leq t - n \leq 99$$
-
-Les deux courbes s'arrêtent à 99 ans : Eurostat regroupe les décès de 100 ans et
-plus dans une classe ouverte, sans âge exact ni année de naissance. La courbe
-des personnalités n'est tracée que pour les années de naissance comptant au
-moins 10 personnes.
-
-### 3.9 Authentification HMD
+### 3.9 Authentification HMD### 3.9 Authentification HMD
 
 HMD n'est **pas** utilisé par défaut, Eurostat fournissant les mêmes quantités
 en accès libre depuis 2014. La fonction `hmd_session()` reste disponible pour
@@ -319,7 +316,7 @@ table de mortalité.
 | Personnalités : définition | Au moins un article Wikipédia, toutes langues | Sans ce filtre, un tiers des fiches Wikidata ne sont pas des personnalités publiques |
 | Personnalités : âge prédit | 60 ans + espérance de vie à 60 ans l'année des 60 ans (§ 3.7) | Couvre 92 % des personnalités, sans biais de mortalité infantile |
 | Personnalités : référence | Même mesure sur tous les décès | La prédiction est dépassée par la majorité de la population elle-même |
-| Personnalités : nuage de points | Un point par (naissance, décès), zones hors période grisées, deux courbes de moyenne | Rendre visibles toutes les personnalités sans tromper sur l'effet de fenêtre (§ 3.8) |
+| Personnalités : nuage de points | Année de décès en abscisse, un point par (décès, naissance), deux lignes d'âge moyen | Rendre visibles toutes les personnalités sans effet de fenêtre (§ 3.8) |
 | Découpage des pages | Une question, une source, une période par page | Une figure mêlant deux périmètres est illisible : c'est ce qui a motivé le passage de quatre à six, puis sept pages |
 | Axe des années, page « par âge » | Fixé à 1998–2024 quel que soit l'âge | Un axe qui bouge avec le sélecteur rend deux sélections incomparables |
 | Survie au-delà du dernier âge documenté | Affichage borné, écart signalé | Mieux vaut afficher moins que d'inventer une valeur |
@@ -373,19 +370,11 @@ Série longue tous sexes confondus (OWID) : **40,1 ans en 1816**, 45,1 en 1900,
 | Hommes | **67 %** | 53 % | +5,4 ans / +1,0 an |
 | Femmes | **63 %** | 61 % | +4,0 ans / +3,2 ans |
 
-À **année de naissance égale** (§ 3.8, décès de 60 à 99 ans), les
-personnalités meurent plus âgées que leurs contemporains pour 75 % des années de
-naissance chez les hommes (écart moyen **+1,0 an**) et 65 % chez les femmes
-(**+0,4 an**). L'écart est bien plus faible que par période de décès (+6,1 ans
-chez les hommes), pour deux raisons :
-
-- **les décès précoces** : les morts entre 25 et 59 ans pèsent 17 % des décès
-  masculins dans la population, contre 8 % chez les personnalités. En ne gardant
-  que les décès à 60 ans ou plus, l'écart masculin tombe à +3,5 ans ;
-- **la répartition par génération** : à période de décès égale, les deux groupes
-  ne mélangent pas les générations dans les mêmes proportions. La comparaison à
-  année de naissance égale retire cet effet ; ce qui reste (+1,0 an) est
-  l'écart entre contemporains.
+**Une partie de l'écart masculin tient aux décès précoces.** Les morts entre 25
+et 59 ans pèsent 17 % des décès d'hommes dans la population, contre 8 % chez les
+personnalités ; en ne gardant que les décès à 60 ans ou plus, l'écart masculin
+tombe de +6,1 à +3,5 ans. Chez les femmes, ces décès pèsent autant des deux côtés
+(8 % et 9 %).
 
 ---
 
@@ -404,7 +393,7 @@ graphique »** qui explique les axes, le sens d'une variation et le piège
 | Distribution & variance | Bande Q1–Q3 + médiane + e₀, avec repère visuel de la frontière estimé / mesuré ; aire d'évolution de l'IQR |
 | Explorateur de cohorte | Courbe de survie empilée (vivants / décédés cumulés) avec repère de l'âge courant |
 | Survie à un âge donné | Aire du % encore en vie à âge fixe selon l'année d'observation, flèche de progression |
-| Personnalités | Barres groupées par période de 5 ans : âge moyen au décès de l'ensemble (gris) et des personnalités (couleur du sexe) ; nuage de toutes les personnalités, un point par année de naissance × année de décès (vert après l'âge prédit, rouge avant), zones hors période grisées, courbes d'âge moyen des personnalités et de l'ensemble par année de naissance ; histogramme des écarts à l'âge prédit, personnalités en barres, ensemble en ligne |
+| Personnalités | Barres groupées par période de 5 ans : âge moyen au décès de l'ensemble (gris) et des personnalités (couleur du sexe) ; nuage de toutes les personnalités par année de décès, un point par année de décès × année de naissance (vert après l'âge prédit, rouge avant, gris avant 60 ans), lignes d'âge moyen au décès des personnalités et de l'ensemble ; histogramme des écarts à l'âge prédit, personnalités en barres, ensemble en ligne |
 
 Le thème Plotly (`plotly_white` / `plotly_dark`) suit le thème Streamlit courant
 (`apply_layout`). Chaque page propose un export **CSV** (`download_csv`).
@@ -475,10 +464,9 @@ Wikidata ──► projet deces_personnalites_FR (collecte longue, import du CSV
   C'est pourquoi la page le compare toujours au même calcul fait sur l'ensemble
   des Français, et jamais à zéro. Les personnalités mortes avant 60 ans en sont
   exclues.
-- **Effet de fenêtre sur le nuage de points** : seuls les décès 1990–2024 sont
-  observés. Les générations anciennes n'y figurent que par leurs grands âges,
-  les récentes que par leurs décès précoces ; la page grise ces zones et compare
-  les personnalités à l'ensemble né la même année.
+- **Morts la même année, pas nés la même année** : les lignes du nuage de points
+  comparent des personnes décédées la même année. L'écart mêle donc la longévité
+  et la différence de fréquence des décès précoces entre les deux groupes.
 - **Population, rupture de périmètre en 1998** : France métropolitaine avant,
   France entière ensuite. Les DOM pèsent environ 2 % des décès.
 - **Millésime figé** : les données ne sont à jour que du dernier
@@ -525,8 +513,9 @@ verrouillent la méthode de la page Personnalités sur des données synthétique
 même seuil d'âge des deux côtés, moyenne de la population pondérée par les
 décès, période limitée aux années communes, sexes séparés, âge prédit pris
 l'année des 60 ans et sur la seule source INSEE, personnalités mortes avant
-60 ans écartées et dénombrées, un point par couple naissance × décès, classe
-« 100 ans et plus » écartée des deux courbes par année de naissance.
+60 ans écartées et dénombrées, un point par couple décès × naissance, point
+sans âge prédit pour les décès avant 60 ans, même seuil de 25 ans pour les
+lignes annuelles.
 
 La CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) exécute les trois
 commandes ci-dessus à chaque push et chaque pull request.

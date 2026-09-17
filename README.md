@@ -137,8 +137,7 @@ Streamlit) ; chaque page propose un export CSV.
 | Sexe, page Personnalités | Toujours séparé | 83 % des personnalités sont des hommes, qui meurent plus jeunes |
 | Âge prédit d'une personnalité | 60 ans + espérance de vie à 60 ans l'année de ses 60 ans | À la naissance, l'INSEE ne remonte qu'à 1946 et la mesure inclut les décès d'enfants |
 | Référence de l'âge prédit | Même calcul sur tous les décès enregistrés | La prédiction sous-estime la survie, puisque la mortalité continue de baisser : l'ensemble des Français la dépasse aussi le plus souvent |
-| Nuage de points | Un point par couple (année de naissance, année de décès), avec les zones hors période grisées | Rendre visibles les 25 000 personnalités, et montrer pourquoi les générations anciennes paraissent toutes vivre plus longtemps |
-| Courbes par année de naissance | Personnalités et ensemble, décès de 60 à 99 ans des deux côtés | Eurostat regroupe les 100 ans et plus sans âge exact |
+| Nuage de points | Année de décès en abscisse, un point par couple (année de décès, année de naissance) | Rendre visibles les 25 000 personnalités ; chaque année de décès est observée en entier, sans effet de fenêtre |
 
 ## Résultats clés
 
@@ -163,10 +162,9 @@ Streamlit) ; chaque page propose un export CSV.
 - **Avant ou après l'âge prédit** : 67 % des hommes célèbres meurent après
   l'âge qu'on pouvait leur prédire à 60 ans, contre 53 % de l'ensemble des
   Français. Chez les femmes, 63 % contre 61 %.
-- **À année de naissance égale** : les personnalités meurent en moyenne
-  **+1,0 an** plus âgées que leurs contemporains chez les hommes, **+0,4 an**
-  chez les femmes. C'est la comparaison la plus juste : elle neutralise l'effet
-  de la période observée.
+- **Une partie de l'écart masculin tient aux décès précoces** : les morts
+  entre 25 et 59 ans pèsent 17 % des décès d'hommes dans la population, contre
+  8 % chez les personnalités. Chez les femmes, ils pèsent autant des deux côtés.
 
 ## Structure
 
