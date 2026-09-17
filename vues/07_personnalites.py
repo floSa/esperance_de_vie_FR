@@ -25,20 +25,11 @@ st.caption(
     "Sources : Wikidata, Eurostat, INSEE."
 )
 
-# Clé propre à la page : les autres pages ne proposent pas « tous ».
-persist("sexe_personnalites", TOUS)
 LIBELLES = {TOUS: "Femmes et hommes", "femmes": "Femmes", "hommes": "Hommes"}
-col_sexe, _ = st.columns([1, 3])
-with col_sexe:
-    sexe = st.selectbox(
-        "Sexe", [TOUS, "femmes", "hommes"],
-        format_func=lambda s: {TOUS: "Tous", "femmes": "Femmes", "hommes": "Hommes"}[s],
-        key="sexe_personnalites",
-    )
 
 try:
-    periodes = repo.comparaison_age_deces(sexe)
-    bilan = repo.bilan_age_deces(sexe)
+    repo.personnalites()
+    repo.deces_population()
 except DonneesManquantes as e:
     st.error(
         f"Données manquantes : {e}\n\nLa liste des personnalités provient du projet "
@@ -47,15 +38,31 @@ except DonneesManquantes as e:
     )
     st.stop()
 
-feminin = sexe == "femmes"
-population = "Ensemble des Françaises" if feminin else "Ensemble des Français"
-population_dans_phrase = population[0].lower() + population[1:]
-morts = "mortes" if feminin else "morts"
-nes = "nées" if feminin else "nés"
-libelle = LIBELLES[sexe]
-couleur = SEX_COLORS.get(sexe, "#7c3aed")
-zone = SEX_ZONES.get(sexe, "rgba(124, 58, 237, 0.2)")
 VERT, ROUGE, GRIS_POINT = "#16a34a", "#dc2626", "#94a3b8"
+
+
+def choisir_sexe(cle: str) -> None:
+    """Liste déroulante propre à un graphique, et libellés accordés au sexe choisi.
+
+    Les libellés sont posés en variables de module : chaque bloc de la page les
+    relit après son propre appel.
+    """
+    global sexe, feminin, population, population_dans_phrase, morts, libelle, couleur, zone
+    persist(cle, TOUS)
+    colonne, _ = st.columns([1, 3])
+    with colonne:
+        sexe = st.selectbox(
+            "Sexe", [TOUS, "femmes", "hommes"],
+            format_func=lambda s: {TOUS: "Tous", "femmes": "Femmes", "hommes": "Hommes"}[s],
+            key=cle,
+        )
+    feminin = sexe == "femmes"
+    population = "Ensemble des Françaises" if feminin else "Ensemble des Français"
+    population_dans_phrase = population[0].lower() + population[1:]
+    morts = "mortes" if feminin else "morts"
+    libelle = LIBELLES[sexe]
+    couleur = SEX_COLORS.get(sexe, "#7c3aed")
+    zone = SEX_ZONES.get(sexe, "rgba(124, 58, 237, 0.2)")
 
 
 def ans(valeur: float) -> str:
@@ -80,6 +87,9 @@ def sources(*noms: str) -> str:
 # ---------------------------------------------------------------------------
 
 st.subheader("Âge moyen au décès par période de 5 ans")
+choisir_sexe("sexe_p_periodes")
+periodes = repo.comparaison_age_deces(sexe)
+bilan = repo.bilan_age_deces(sexe)
 
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Personnalités", f"{fr_num(bilan['personnalites'])} ans",
@@ -152,6 +162,9 @@ st.caption(
 
 p_debut, p_fin = repo.annees_communes()
 
+st.markdown("#### Âge au décès par année de décès")
+choisir_sexe("sexe_p_nuage_deces")
+
 ecarts, morts_avant_60 = repo.ecarts_personnalites(sexe, p_debut, p_fin)
 ecarts_pop = repo.ecarts_population(sexe, p_debut, p_fin)
 part_pers, med_pers = repo.part_apres_et_mediane(ecarts["ecart"])
@@ -171,8 +184,6 @@ st.caption(
 )
 
 # --- 2.1 Nuage par année de décès -------------------------------------------
-
-st.markdown("#### Âge au décès par année de décès")
 
 points = repo.points_personnalites(sexe, p_debut, p_fin)
 lignes_annee = repo.age_moyen_par_annee_deces(sexe, p_debut, p_fin)
@@ -248,6 +259,7 @@ note_lecture(
 # --- 2.2 Boîtes à moustaches par année de décès -----------------------------
 
 st.markdown("#### Distribution annuelle de l'âge au décès des personnalités")
+choisir_sexe("sexe_p_boites")
 
 boites_pop = repo.boites_population_par_annee_deces(sexe, p_debut, p_fin)
 pers_annee = repo.personnalites_par_annee_deces(sexe, p_debut, p_fin)
@@ -299,6 +311,7 @@ note_lecture(
 # --- 2.3 Écart moyen à l'âge prédit (barycentre) ----------------------------
 
 st.markdown("#### Écart moyen à l'âge prédit par période de 5 ans")
+choisir_sexe("sexe_p_ecart_moyen")
 
 barycentres = repo.ecart_moyen_par_periode(sexe)
 
@@ -352,7 +365,8 @@ download_csv(barycentres, f"personnalites_ecart_moyen_{sexe}")
 # --- 2.4 Nuage par année de naissance ---------------------------------------
 
 st.markdown("#### Âge au décès par année de naissance")
-
+choisir_sexe("sexe_p_naissance")
+points = repo.points_personnalites(sexe, p_debut, p_fin)
 points_n = points[points["ecart"].notna()].assign(
     age_atteint=lambda d: d["year"] - d["annee_naissance"])
 predit = repo.age_predit_par_naissance(sexe)
@@ -448,6 +462,11 @@ note_lecture(
 # --- 2.5 Répartition des écarts ---------------------------------------------
 
 st.markdown("#### Répartition des écarts à l'âge prédit")
+choisir_sexe("sexe_p_histogramme")
+ecarts, _ = repo.ecarts_personnalites(sexe, p_debut, p_fin)
+ecarts_pop = repo.ecarts_population(sexe, p_debut, p_fin)
+part_pers, _ = repo.part_apres_et_mediane(ecarts["ecart"])
+part_pop, _ = repo.part_apres_et_mediane(ecarts_pop["ecart"], ecarts_pop["deces"])
 
 LARGEUR = 2
 bornes = np.arange(-30, 38 + LARGEUR, LARGEUR)
