@@ -37,11 +37,17 @@ fournisseur et la date d'extraction. Le diff Git de ces fichiers est la trace de
 ce qui a bougé d'un rafraîchissement à l'autre.
 
 **Exception : les personnalités.** Leur collecte sur Wikidata prend plus d'une
-demi-heure. Elle vit dans le projet voisin
-`deces_personnalites_FR` (dossier voisin de celui-ci), et `refresh_data`
-importe son fichier consolidé (chemin modifiable avec `--personnalites`).
-Pour les mettre à jour : relancer d'abord la collecte là-bas, puis
-`refresh_data` ici.
+demi-heure : elle se lance à part, puis `refresh_data` importe son résultat.
+
+```bash
+uv run python -m scripts.collecte_personnalites    # écrit data/personnalites/
+uv run python -m scripts.refresh_data
+```
+
+Le service public de Wikidata coupe toute requête au-delà de 60 secondes : une
+année trop lourde est découpée en deux jusqu'à ce que la requête passe. Chaque
+année est mise en cache dans `data/personnalites/brut/` (non versionné) ; une
+collecte interrompue reprend là où elle s'est arrêtée.
 
 ## D'où viennent les données
 
@@ -54,7 +60,7 @@ Pour les mettre à jour : relancer d'abord la collecte là-bas, puis
 | Distribution des âges au décès (`dx` → quartiles) | Eurostat — `demo_mlifetable` | Ouvert | 2014–2024 |
 | Comparaison européenne | Eurostat — `demo_mlexpec` | Ouvert | dernière année publiée |
 | Décès enregistrés par âge et sexe | Eurostat — `demo_magec` | Ouvert | 1990–2024 (métropole jusqu'en 1997) |
-| Personnalités françaises décédées | Wikidata, via `deces_personnalites_FR` | Ouvert (CC0) | 1990–2025 |
+| Personnalités françaises décédées | Wikidata, via `scripts/collecte_personnalites.py` | Ouvert (CC0) | 1990–2025 |
 
 Le périmètre géographique retenu est la **France métropolitaine**, constant sur
 toute la profondeur historique — « France entière » intègre les DOM à partir de
@@ -79,7 +85,7 @@ flowchart LR
     euro[Eurostat]
     owid[Our World in Data]
   end
-  wd[Wikidata] --> collecte[projet voisin<br/>deces_personnalites_FR]
+  wd[Wikidata] --> collecte[scripts/collecte_personnalites.py]
   refresh[scripts/refresh_data.py]
   csv[(data/sources/<br/>CSV + manifest.json)]
   repo[data/repository.py]
@@ -186,6 +192,7 @@ Streamlit) ; chaque page propose un export CSV.
 │   └── european.py               # nomenclature des pays UE-27
 ├── scripts/
 │   ├── sources.py                # un fetcher par source, avec provenance
+│   ├── collecte_personnalites.py # collecte Wikidata des personnalités décédées
 │   ├── refresh_data.py           # régénère data/sources/
 │   └── check_pages.py            # rend les 8 pages et détecte les erreurs
 └── tests/                        # invariants démographiques
@@ -211,7 +218,7 @@ creux de survie artificiel entre les générations 1963 et 1967.
 - Eurostat — [`demo_mlexpec`](https://ec.europa.eu/eurostat/databrowser/view/demo_mlexpec), [`demo_mlifetable`](https://ec.europa.eu/eurostat/databrowser/view/demo_mlifetable)
 - Our World in Data — [life expectancy](https://ourworldindata.org/life-expectancy), d'après la Human Mortality Database
 - Eurostat — [`demo_magec`](https://ec.europa.eu/eurostat/databrowser/view/demo_magec), décès par âge et sexe
-- Wikidata — personnalités décédées, via le projet `deces_personnalites_FR`
+- Wikidata — personnalités décédées, via `scripts/collecte_personnalites.py`
 - Wilmoth & Horiuchi (1999), Robine (2001) — compression de la mortalité
 
 ## Licences

@@ -64,14 +64,14 @@ uv run python -m scripts.refresh_data
 | `distribution_deces_eurostat.csv` | Eurostat | `demo_mlifetable`, `indic_de=NUMBERDYING` (`dx`) | 2014–2024, sexes F/M |
 | `esperance_vie_europe_eurostat.csv` | Eurostat | `demo_mlexpec`, `age=Y_LT1` | dernière année publiée, 41 territoires |
 | `deces_par_age_eurostat.csv` | Eurostat | `demo_magec`, décès enregistrés par âge (100 = 100 ans et plus) | 1986–2024, sexes F/M ; `FX` avant 1998, `FR` ensuite |
-| `deces_personnalites_wikidata.csv` | Wikidata, via le projet `deces_personnalites_FR` | personnes de nationalité française ayant au moins un article Wikipédia | 1990–2025, âge exact au décès |
+| `deces_personnalites_wikidata.csv` | Wikidata, via `scripts/collecte_personnalites.py` | personnes de nationalité française ayant au moins un article Wikipédia | 1990–2025, âge exact au décès |
 
 Aucune de ces sources ne demande de compte ni de clé d'API.
 
 **Les personnalités font exception au rafraîchissement direct.** Leur collecte
 sur Wikidata prend plus d'une demi-heure (le service public coupe toute requête
 au-delà de 60 secondes, les années sont découpées en tranches). Elle vit dans le
-projet voisin `deces_personnalites_FR` ; `refresh_data` en importe le fichier
+script `scripts/collecte_personnalites.py`, lancé à part ; `refresh_data` importe le fichier
 consolidé, en ne gardant que les personnes dont l'âge au décès est calculable
 au jour près et dont le sexe est renseigné (27 785 sur 29 560).
 
@@ -467,7 +467,7 @@ Le thème Plotly (`plotly_white` / `plotly_dark`) suit le thème Streamlit coura
 APIs publiques ──► scripts/refresh_data.py ──► data/sources/*.csv + manifest.json
 (INSEE, Eurostat,          ▲                             │
  Our World in Data)        │                             ▼
-Wikidata ──► projet deces_personnalites_FR (collecte longue, import du CSV)
+Wikidata ──► scripts/collecte_personnalites.py (collecte longue, import du CSV)
                                               data/repository.py
                                                          │
                      data/embedded.py ───────────────────┤
