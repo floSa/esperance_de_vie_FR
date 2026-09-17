@@ -102,19 +102,18 @@ flowchart LR
 
 ## Les sept vues
 
-Une question par page, une source, une période. C'est la règle qui structure
-l'application : mélanger deux périmètres dans une même figure rendait les
-graphiques illisibles.
+Un sujet par page, une source, une période : mélanger deux périmètres dans une
+même figure rend les graphiques illisibles.
 
-| Page | Question | Source | Période |
+| Page | Sujet | Source | Période |
 |---|---|---|---|
-| **Vue générale** | Comment l'espérance de vie a-t-elle évolué chez les femmes et les hommes ? | INSEE | 1946–2025 |
-| **Espérance de vie par âge** | Combien d'années reste-t-il à vivre à un âge donné ? | Eurostat | 1998–2024 |
-| **Comparaison européenne** | Où se situe la France dans l'UE ? | Eurostat | dernière année publiée |
-| **Distribution & variance** | À quel âge meurt-on, et cet âge s'est-il resserré ? | Eurostat + estimations | 1900–2024 |
-| **Explorateur de cohorte** | Parmi les personnes nées une année donnée, combien sont encore en vie ? | Estimations ±5 % | générations 1930–1990 |
-| **Survie à un âge donné** | À âge constant, la survie progresse-t-elle d'une génération à l'autre ? | Estimations ±5 % | générations 1930–1990 |
-| **Personnalités** | Les personnalités meurent-elles plus âgées que l'ensemble des Français ? Et, une à une, avant ou après l'âge qu'on pouvait leur prédire ? | Wikidata + Eurostat + INSEE | 1990–2024 |
+| **Vue générale** | Évolution de l'espérance de vie à la naissance, femmes et hommes | INSEE | 1946–2025 |
+| **Espérance de vie par âge** | Années restant à vivre selon l'âge atteint | Eurostat | 1998–2024 |
+| **Comparaison européenne** | Classement des 27 États membres | Eurostat | dernière année publiée |
+| **Distribution & variance** | Distribution des âges au décès et compression de la mortalité | Eurostat + estimations | 1900–2024 |
+| **Explorateur de cohorte** | Survie d'une génération selon l'âge | Estimations ±5 % | générations 1930–1990 |
+| **Survie à un âge donné** | Survie à âge fixe selon la génération | Estimations ±5 % | générations 1930–1990 |
+| **Personnalités** | Âge au décès des personnalités comparé à l'ensemble ; écart à l'âge prédit | Wikidata + Eurostat + INSEE | 1990–2024 |
 
 Chaque graphique porte une note **« Comment lire ce graphique »**. Les
 graphiques sont générés à la volée par Plotly (thème clair/sombre suivant
@@ -138,7 +137,9 @@ Streamlit) ; chaque page propose un export CSV.
 | Âge prédit d'une personnalité | 60 ans + espérance de vie à 60 ans l'année de ses 60 ans | À la naissance, l'INSEE ne remonte qu'à 1946 et la mesure inclut les décès d'enfants |
 | Référence de l'âge prédit | Même calcul sur tous les décès enregistrés | La prédiction sous-estime la survie, puisque la mortalité continue de baisser : l'ensemble des Français la dépasse aussi le plus souvent |
 | Nuage de points | Année de décès en abscisse, un point par couple (année de décès, année de naissance) | Rendre visibles les 25 000 personnalités ; chaque année de décès est observée en entier, sans effet de fenêtre |
-| Boîtes à moustaches | Une boîte par année, ensemble et personnalités côte à côte | Voir la dispersion des âges au décès, pas seulement leur moyenne |
+| Boîtes à moustaches | Une boîte par année pour les personnalités, âge médian de l'ensemble en ligne | Montrer la dispersion des âges au décès sans dédoubler les boîtes |
+| Écart moyen à l'âge prédit | Barycentre des écarts par période, intervalle de confiance à 95 % pour les personnalités | Résumer en un point par période l'avance ou le retard sur l'âge prédit |
+| Sélecteur de la page Personnalités | Tous, Femmes, Hommes ; chaque personnalité garde l'âge prédit de son sexe | Vue d'ensemble sans mélanger les tables de mortalité des deux sexes |
 | Vue par année de naissance | Conservée en complément, zones hors période grisées | Comparer des contemporains en montrant l'effet de la période observée |
 
 ## Résultats clés
@@ -167,6 +168,9 @@ Streamlit) ; chaque page propose un export CSV.
 - **Une partie de l'écart masculin tient aux décès précoces** : les morts
   entre 25 et 59 ans pèsent 17 % des décès d'hommes dans la population, contre
   8 % chez les personnalités. Chez les femmes, ils pèsent autant des deux côtés.
+- **Écart moyen à l'âge prédit (2020–2024)** : +4,0 ans pour les hommes célèbres
+  contre −0,5 an pour l'ensemble des hommes ; +1,5 an pour les femmes célèbres
+  contre +0,6 an pour l'ensemble des femmes.
 
 ## Structure
 

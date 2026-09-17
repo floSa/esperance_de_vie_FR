@@ -12,18 +12,18 @@ chiffrés** et, surtout, les **limites de représentativité**.
 ## 1. Problème étudié
 
 L'application ne prédit rien : elle **décrit et met en scène** l'évolution de la
-mortalité française et la compare au reste de l'Europe. Une question par page,
-sept pages :
+mortalité française et la compare au reste de l'Europe. Un sujet par page, sept
+pages :
 
-| Page | Question posée | Indicateur central |
+| Page | Sujet | Indicateur central |
 |---|---|---|
-| Vue générale | Comment l'espérance de vie a-t-elle évolué chez les femmes et les hommes ? | e₀ par sexe, 1946–2025 |
-| Espérance de vie par âge | Combien d'années reste-t-il à vivre à un âge donné ? | Espérance résiduelle, 96 âges |
-| Comparaison européenne | Où se situe la France dans l'UE ? | e₀ des 27 États membres |
-| Distribution & variance | Les âges au décès se sont-ils resserrés autour d'un âge élevé ? | Quartiles Q1–Q3, IQR, écart-type |
-| Explorateur de cohorte | Parmi les personnes nées une année donnée, combien sont encore en vie ? | Courbe de survie, effectifs |
-| Survie à un âge donné | À âge constant, la survie s'améliore-t-elle d'une génération à l'autre ? | % vivants à âge fixe |
-| Personnalités | Les personnalités meurent-elles plus âgées que l'ensemble des Français ? | Âge moyen au décès par période ; écart de chaque personnalité à son âge prédit |
+| Vue générale | Évolution de l'espérance de vie, femmes et hommes | e₀ par sexe, 1946–2025 |
+| Espérance de vie par âge | Années restant à vivre selon l'âge atteint | Espérance résiduelle, 96 âges |
+| Comparaison européenne | Position de la France dans l'UE | e₀ des 27 États membres |
+| Distribution & variance | Resserrement des âges au décès | Quartiles Q1–Q3, IQR, écart-type |
+| Explorateur de cohorte | Survie d'une génération selon l'âge | Courbe de survie, effectifs |
+| Survie à un âge donné | Survie à âge fixe selon la génération | % vivants à âge fixe |
+| Personnalités | Âge au décès des personnalités comparé à l'ensemble | Âge moyen au décès par période ; écart de chaque personnalité à son âge prédit |
 
 **Vocabulaire démographique manipulé** :
 
@@ -280,19 +280,30 @@ la même année, décès à 25 ans ou plus dans les deux cas — le même calcul
 
 ### 3.9 Boîtes à moustaches par année de décès — `boites_population_par_annee_deces`
 
-Même population que § 3.8, résumée par une boîte par année : quartiles, âge
-moyen et moustaches à 1,5 écart interquartile.
+Même population que § 3.8. Une boîte par année, pour les personnalités
+uniquement : quartiles, âge moyen et moustaches à 1,5 écart interquartile,
+calculés par Plotly sur les âges individuels. Les personnalités au-delà des
+moustaches apparaissent en points, avec leur nom au survol.
 
-- **Personnalités** : calcul fait par Plotly sur les âges individuels ; les
-  personnalités au-delà des moustaches apparaissent en points, avec leur nom au
-  survol.
-- **Ensemble des Français** : Eurostat ne donne que des effectifs par âge. Les
-  quartiles sont le premier âge dont la part cumulée des décès atteint 25, 50 et
-  75 % ; les moustaches, les âges observés les plus extrêmes à moins de 1,5 écart
-  interquartile de la boîte. La classe « 100 ans et plus » compte pour 100 ans,
-  ce qui plafonne la moustache haute.
+L'ensemble des Français est représenté par une ligne : son âge médian au décès,
+année par année. Eurostat ne donnant que des effectifs par âge, la médiane est le
+premier âge dont la part cumulée des décès atteint 50 %. La fonction calcule
+aussi quartiles et moustaches pondérés (même règle de 1,5 écart interquartile),
+la classe « 100 ans et plus » comptant pour 100 ans.
 
-### 3.10 Nuage de points par année de naissance — `points_personnalites`
+### 3.10 Écart moyen à l'âge prédit — `ecart_moyen_par_periode`
+
+Barycentre des écarts de § 3.7, par période de 5 ans et décès à 60 ans ou plus :
+
+$$\bar{e}_{\text{pers}} = \frac{1}{n}\sum_i (a_i - \hat{a}_i), \qquad \text{IC}_{95} = \bar{e}_{\text{pers}} \pm 1{,}96\,\frac{s}{\sqrt{n}}$$
+
+$$\bar{e}_{\text{pop}} = \frac{\sum_{t,a} D_{t,a}\,(a - \hat{a}_{t-a})}{\sum_{t,a} D_{t,a}}$$
+
+Un écart moyen positif signifie des décès en moyenne après l'âge prédit. L'âge
+prédit reposant sur une table du moment, la comparaison porte sur la différence
+entre les deux groupes, et non sur la position de chacun par rapport à zéro.
+
+### 3.11 Nuage de points par année de naissance — `points_personnalites`
 
 Vue complémentaire de § 3.8, limitée aux décès à 60 ans ou plus (ceux qui ont un
 âge prédit). Chaque personnalité se place en $(n, a)$ : année de naissance, âge
@@ -318,7 +329,7 @@ plus dans une classe ouverte, sans âge exact ni année de naissance. La courbe
 des personnalités n'est tracée que pour les années de naissance comptant au
 moins 10 personnes.
 
-### 3.11 Authentification HMD
+### 3.12 Authentification HMD
 
 HMD n'est **pas** utilisé par défaut, Eurostat fournissant les mêmes quantités
 en accès libre depuis 2014. La fonction `hmd_session()` reste disponible pour
@@ -357,8 +368,10 @@ table de mortalité.
 | Personnalités : âge prédit | 60 ans + espérance de vie à 60 ans l'année des 60 ans (§ 3.7) | Couvre 92 % des personnalités, sans biais de mortalité infantile |
 | Personnalités : référence | Même mesure sur tous les décès | La prédiction est dépassée par la majorité de la population elle-même |
 | Personnalités : nuage de points | Année de décès en abscisse, un point par (décès, naissance), deux lignes d'âge moyen | Rendre visibles toutes les personnalités sans effet de fenêtre (§ 3.8) |
-| Personnalités : boîtes à moustaches | Une boîte par année et par groupe, quartiles de la population pondérés par les décès | Voir la dispersion, pas seulement la moyenne (§ 3.9) |
-| Personnalités : vue par année de naissance | Conservée en complément, zones hors période grisées | Comparer des contemporains, en rendant visible l'effet de fenêtre (§ 3.10) |
+| Personnalités : boîtes à moustaches | Une boîte par année pour les personnalités, âge médian de l'ensemble en ligne | Montrer la dispersion sans dédoubler les boîtes (§ 3.9) |
+| Personnalités : vue par année de naissance | Conservée en complément, zones hors période grisées | Comparer des contemporains, en rendant visible l'effet de fenêtre (§ 3.11) |
+| Personnalités : écart moyen | Barycentre par période, IC 95 % pour les personnalités (§ 3.10) | Résumer l'avance ou le retard sur l'âge prédit |
+| Personnalités : « Tous » | Effectifs de population additionnés, âge prédit propre au sexe de chaque personne | Vue d'ensemble sans mélanger les tables de mortalité |
 | Découpage des pages | Une question, une source, une période par page | Une figure mêlant deux périmètres est illisible : c'est ce qui a motivé le passage de quatre à six, puis sept pages |
 | Axe des années, page « par âge » | Fixé à 1998–2024 quel que soit l'âge | Un axe qui bouge avec le sélecteur rend deux sélections incomparables |
 | Survie au-delà du dernier âge documenté | Affichage borné, écart signalé | Mieux vaut afficher moins que d'inventer une valeur |
@@ -418,6 +431,12 @@ personnalités ; en ne gardant que les décès à 60 ans ou plus, l'écart mascu
 tombe de +6,1 à +3,5 ans. Chez les femmes, ces décès pèsent autant des deux côtés
 (8 % et 9 %).
 
+| Écart moyen à l'âge prédit, 2020–2024 | Personnalités | Ensemble |
+|---|---|---|
+| Hommes | +4,0 ans (± 0,4) | −0,5 an |
+| Femmes | +1,5 an (± 0,9) | +0,6 an |
+| Tous | +3,6 ans (± 0,3) | 0,0 an |
+
 ---
 
 ## 6. Visualisations
@@ -435,7 +454,7 @@ graphique »** qui explique les axes, le sens d'une variation et le piège
 | Distribution & variance | Bande Q1–Q3 + médiane + e₀, avec repère visuel de la frontière estimé / mesuré ; aire d'évolution de l'IQR |
 | Explorateur de cohorte | Courbe de survie empilée (vivants / décédés cumulés) avec repère de l'âge courant |
 | Survie à un âge donné | Aire du % encore en vie à âge fixe selon l'année d'observation, flèche de progression |
-| Personnalités | Barres groupées par période de 5 ans : âge moyen au décès de l'ensemble (gris) et des personnalités (couleur du sexe) ; nuage de toutes les personnalités par année de décès, un point par année de décès × année de naissance (vert après l'âge prédit, rouge avant, gris avant 60 ans), lignes d'âge moyen au décès des personnalités et de l'ensemble ; boîtes à moustaches par année de décès, ensemble en gris et personnalités en couleur, noms des personnalités extrêmes au survol ; nuage par année de naissance avec zones hors période grisées, courbe d'âge prédit et courbes d'âge moyen des personnalités et de l'ensemble nés la même année ; histogramme des écarts à l'âge prédit, personnalités en barres, ensemble en ligne |
+| Personnalités | Barres groupées par période de 5 ans : âge moyen au décès de l'ensemble (gris) et des personnalités (couleur du sexe) ; nuage de toutes les personnalités par année de décès, un point par année de décès × année de naissance (vert après l'âge prédit, rouge avant, gris avant 60 ans), lignes d'âge moyen au décès des personnalités et de l'ensemble ; boîtes à moustaches par année de décès pour les personnalités, âge médian de l'ensemble en ligne, noms des personnalités extrêmes au survol ; écart moyen à l'âge prédit par période, avec intervalle de confiance ; nuage par année de naissance avec zones hors période grisées, courbe d'âge prédit et courbes d'âge moyen des personnalités et de l'ensemble nés la même année ; histogramme des écarts à l'âge prédit, personnalités en barres, ensemble en ligne |
 
 Le thème Plotly (`plotly_white` / `plotly_dark`) suit le thème Streamlit courant
 (`apply_layout`). Chaque page propose un export **CSV** (`download_csv`).
@@ -558,7 +577,9 @@ l'année des 60 ans et sur la seule source INSEE, personnalités mortes avant
 60 ans écartées et dénombrées, un point par couple décès × naissance, point
 sans âge prédit pour les décès avant 60 ans, même seuil de 25 ans pour les
 lignes annuelles, quartiles et moustaches de la population pondérés par les
-décès, classe « 100 ans et plus » écartée des courbes par année de naissance.
+décès, classe « 100 ans et plus » écartée des courbes par année de naissance,
+sélection « Tous » (âge prédit propre au sexe, effectifs additionnés), barycentre
+des écarts pondéré par les décès et intervalle de confiance à 95 %.
 
 La CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) exécute les trois
 commandes ci-dessus à chaque push et chaque pull request.
