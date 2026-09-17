@@ -25,7 +25,7 @@ from data.embedded import RESIDUAL_LIFE_2025, SEX_RATIO
 st.set_page_config(page_title="Explorateur de cohorte · Espérance de vie", page_icon="👥", layout="wide")
 render_sidebar()
 
-st.title("👥 Explorateur de cohorte — Qui est encore en vie ?")
+st.title("👥 Explorateur de cohorte — survie par génération")
 
 # ---------------------------------------------------------------------------
 # 1. Sélecteurs
@@ -86,9 +86,9 @@ c5.metric(
 
 if donnees_tronquees:
     st.caption(
-        f"Cette génération a **{age_actuel} ans** aujourd'hui, mais les tables "
-        f"de survie s'arrêtent à **{age_donnees} ans**. Les effectifs ci-dessus "
-        f"sont donc ceux de {age_donnees} ans, dernier âge documenté."
+        f"Âge de la génération en {CURRENT_YEAR} : **{age_actuel} ans**. Tables de "
+        f"survie limitées à **{age_donnees} ans** : effectifs affichés à "
+        f"{age_donnees} ans, dernier âge documenté."
     )
 
 # ---------------------------------------------------------------------------
@@ -143,31 +143,30 @@ apply_layout(
 st.plotly_chart(fig, width='stretch')
 
 note_lecture(
-    f"L'axe horizontal suit la génération née en <strong>{annee_naissance}</strong> "
-    f"tout au long de sa vie, de 0 an jusqu'à <strong>{age_donnees} ans</strong>. "
-    "La zone grise du haut est la part encore en vie, la "
-    "zone rouge du bas la part déjà décédée — les deux font toujours 100 %. "
-    "<br><br>La pente raide tout à gauche est la <strong>mortalité "
-    "infantile</strong> : une part notable des décès d'une génération survient "
-    "avant son premier anniversaire. La zone rouge reste ensuite presque plate "
-    "pendant des décennies, puis s'élargit à partir de 60 ans environ.",
+    f"<strong>Axe horizontal</strong> : âge de la génération née en "
+    f"<strong>{annee_naissance}</strong>, de 0 à {age_donnees} ans."
+    "<br>"
+    "<strong>Axe vertical</strong> : part de la génération, en %."
+    "<br>"
+    "<strong>Zones</strong> : en gris, part encore en vie ; en rouge, part décédée. "
+    "Total de 100 %."
+    "<br><br>"
+    "Forte pente initiale : <strong>mortalité infantile</strong>, concentrée avant "
+    "le premier anniversaire. Zone rouge ensuite quasi stable pendant plusieurs "
+    "décennies, puis en hausse à partir de 60 ans environ.",
     "Survie par génération : estimation à ±5 % (tables de génération INSEE / "
     "Vallin & Meslé) · effectifs de naissance : "
     + repo.millesime("naissances_fr_insee"),
 )
 
 st.warning(
-    f"**Pourquoi « décès vers {fr_num(age_actuel + residuelle, 0)} ans » dépasse "
-    "l'espérance de vie à la naissance** — cette valeur ne concerne que les "
-    f"**survivants** : les {fr_num(100 - pct_vivants)} % de la génération déjà "
-    "décédés n'y comptent pas. Avoir atteint "
-    f"{age_actuel} ans, c'est avoir échappé à la mortalité infantile, aux "
-    "accidents et aux maladies précoces. Plus on avance en âge, plus l'âge de "
-    "décès attendu recule.\n\n"
-    "Le calcul repose de plus sur la **table du moment 2025**, qui fige les "
-    "conditions sanitaires d'aujourd'hui. Si les progrès se poursuivent, la "
-    "survie réelle de cette génération sera **supérieure** : les tables du moment "
-    "sous-estiment historiquement la longévité des générations."
+    f"**Âge de décès attendu ({fr_num(age_actuel + residuelle, 0)} ans) supérieur à "
+    "l'espérance de vie à la naissance** : valeur limitée aux **survivants**, les "
+    f"{fr_num(100 - pct_vivants)} % de la génération déjà décédés n'étant pas "
+    "comptés. L'âge de décès attendu augmente avec l'âge atteint.\n\n"
+    "Calcul fondé sur la **table du moment 2025**, à conditions sanitaires "
+    "constantes. En cas de poursuite des progrès, la survie réelle de la génération "
+    "sera **supérieure**."
 )
 
 download_csv(curve, "cohorte_explorer")

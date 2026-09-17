@@ -64,22 +64,22 @@ apply_layout(fig, height=460,
 st.plotly_chart(fig, width='stretch')
 
 note_lecture(
-    "<strong>Axe horizontal</strong> : les années, "
+    "<strong>Axe horizontal</strong> : années, "
     f"de {an_debut} à {an_fin}."
     "<br>"
-    "<strong>Axe vertical</strong> : le nombre d'années que vivra un bébé né "
-    "cette année-là, si la mortalité ne change plus."
+    "<strong>Axe vertical</strong> : nombre d'années que vivrait un nouveau-né de "
+    "l'année si la mortalité restait constante."
     "<br>"
-    "<strong>Deux courbes</strong> : les femmes en rose, les hommes en bleu."
+    "<strong>Courbes</strong> : femmes en rose, hommes en bleu."
     "<br><br>"
-    "Les deux courbes montent sans interruption. Les femmes ont gagné "
+    "Progression continue sur toute la période. Gain de "
     f"<strong>{fr_num(derniere['femmes'] - premiere['femmes'])} ans</strong> "
-    f"depuis {an_debut}, les hommes "
-    f"<strong>{fr_num(derniere['hommes'] - premiere['hommes'])} ans</strong>."
+    f"pour les femmes depuis {an_debut}, "
+    f"<strong>{fr_num(derniere['hommes'] - premiere['hommes'])} ans</strong> "
+    "pour les hommes."
     "<br><br>"
-    "L'écart entre les deux courbes est la <strong>surmortalité "
-    "masculine</strong>. Il s'est creusé jusqu'aux années 1990, puis se "
-    "resserre.",
+    "Écart entre les courbes : <strong>surmortalité masculine</strong>, en hausse "
+    "jusqu'aux années 1990, en baisse depuis.",
     repo.millesime("esperance_vie_fr_insee"),
 )
 
@@ -87,7 +87,7 @@ note_lecture(
 # 3. Recul historique
 # ---------------------------------------------------------------------------
 
-st.subheader("🕰️ Le recul historique, depuis 1816")
+st.subheader("Série longue, 1816–2023")
 
 longue = repo.esperance_vie_longue()
 fig_longue = go.Figure()
@@ -107,19 +107,18 @@ apply_layout(fig_longue, height=360, showlegend=False,
 st.plotly_chart(fig_longue, width='stretch')
 
 note_lecture(
-    "Même indicateur que ci-dessus, mais sur deux siècles."
+    "Même indicateur que le graphique précédent, sur deux siècles."
     "<br>"
-    "<strong>Une seule courbe</strong> : avant 1946, le détail par sexe "
-    "n'existe pas. Femmes et hommes sont donc réunis."
+    "<strong>Courbe unique</strong> : femmes et hommes réunis, le détail par sexe "
+    "n'étant pas disponible avant 1946."
     "<br><br>"
-    "Chaque creux est une crise de mortalité."
+    "Creux : crises de mortalité."
     "<br>"
     "1871 : guerre franco-prussienne. 1918 : grippe espagnole et fin de la "
     "Première Guerre. 1940 : Seconde Guerre."
     "<br><br>"
-    "En 1918, la valeur tombe à <strong>34,8 ans</strong>, contre 43,0 "
-    "l'année d'avant. Elle remonte dès l'année suivante. C'est ce qui montre "
-    "que l'indicateur décrit une année, pas une vie.",
+    "1918 : <strong>34,8 ans</strong>, contre 43,0 en 1917, puis remontée dès "
+    "1919. L'indicateur décrit la mortalité d'une année, et non la durée d'une vie.",
     repo.millesime("esperance_vie_fr_longue_owid"),
 )
 

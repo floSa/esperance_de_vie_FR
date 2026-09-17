@@ -31,44 +31,44 @@ c3.metric("Écart femmes − hommes",
 
 st.markdown("---")
 st.subheader("Les sept vues")
-st.caption("Une question par page, une source, une période.")
+st.caption("Un sujet par page, une source, une période.")
 
 col_a, col_b = st.columns(2)
 with col_a:
     st.page_link(
         "pages/01_vue_generale.py",
-        label="**Vue générale** — comment l'espérance de vie a évolué",
+        label="**Vue générale** — évolution de l'espérance de vie",
         icon="📈",
     )
     st.page_link(
         "pages/02_esperance_par_age.py",
-        label="**Espérance de vie par âge** — combien d'années restent à vivre",
+        label="**Espérance de vie par âge** — années restant à vivre selon l'âge",
         icon="🎚️",
     )
     st.page_link(
         "pages/03_comparaison_europe.py",
-        label="**Comparaison européenne** — où se situe la France",
+        label="**Comparaison européenne** — classement des 27 États membres",
         icon="🇪🇺",
     )
 with col_b:
     st.page_link(
         "pages/04_distribution_variance.py",
-        label="**Distribution & variance** — à quel âge on meurt",
+        label="**Distribution & variance** — distribution des âges au décès",
         icon="📐",
     )
     st.page_link(
         "pages/05_explorateur_cohorte.py",
-        label="**Explorateur de cohorte** — qui est encore en vie",
+        label="**Explorateur de cohorte** — survie par génération",
         icon="👥",
     )
     st.page_link(
         "pages/06_survie_age_donne.py",
-        label="**Survie à un âge donné** — comparaison entre générations",
+        label="**Survie à un âge donné** — survie à âge fixe selon la génération",
         icon="🔄",
     )
     st.page_link(
         "pages/07_personnalites.py",
-        label="**Personnalités** — vivent-elles plus longtemps ?",
+        label="**Personnalités** — âge au décès comparé à l'ensemble de la population",
         icon="🎭",
     )
 

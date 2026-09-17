@@ -65,20 +65,18 @@ apply_layout(fig, height=680, coloraxis_showscale=False,
 st.plotly_chart(fig, width='stretch')
 
 note_lecture(
-    "<strong>Une barre par pays</strong>, du plus élevé en haut au plus bas "
-    "en bas. Femmes et hommes réunis."
+    "<strong>Barres</strong> : un pays par barre, classés par espérance de vie "
+    "décroissante, femmes et hommes réunis."
     "<br>"
-    "<strong>La France est cerclée d'orange.</strong> Elle arrive "
-    f"<strong>{rang}<sup>e</sup> sur {len(pays)}</strong>."
+    f"<strong>France</strong> : cerclée d'orange, <strong>{rang}<sup>e</sup> sur "
+    f"{len(pays)}</strong>."
     "<br>"
-    "<strong>Le trait orange</strong> est la moyenne des 27 pays."
+    "<strong>Trait orange</strong> : moyenne des 27 pays."
     "<br><br>"
-    "Attention à l'échelle : elle démarre à 70 ans, pas à 0. Les barres "
-    "paraissent donc très inégales. En réalité, les 27 pays tiennent en un "
-    "peu plus de 8 ans."
+    "Échelle à partir de 70 ans : les écarts visuels sont amplifiés. Les 27 pays "
+    "tiennent dans un intervalle d'un peu plus de 8 ans."
     "<br><br>"
-    f"Ce graphique montre <strong>une seule année, {annee}</strong>. Ce n'est "
-    "pas une évolution.",
+    f"Données de l'année <strong>{annee}</strong> uniquement.",
     repo.millesime("esperance_vie_europe_eurostat"),
 )
 

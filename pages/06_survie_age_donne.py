@@ -24,9 +24,8 @@ render_sidebar()
 
 st.title("🔄 Survie à un âge donné")
 st.caption(
-    "Combien de personnes d'une génération sont encore en vie quand elle "
-    "atteint un âge donné — et comment ce nombre évolue de génération en "
-    "génération."
+    "Part d'une génération encore en vie à un âge donné, et évolution de cette part "
+    "d'une génération à l'autre."
 )
 
 # ---------------------------------------------------------------------------
@@ -97,9 +96,8 @@ c4.metric("Progression", f"+{fr_num(gain)} points")
 c5.metric("Générations comparées", f"{an_debut - age} → {an_fin - age}")
 
 st.markdown(
-    f"> Sur **{fr_num(pct_debut)} %** de la génération {an_debut - age} encore "
-    f"en vie à {age} ans, on est passé à **{fr_num(pct_fin)} %** pour la "
-    f"génération {an_fin - age}."
+    f"> Part encore en vie à {age} ans : **{fr_num(pct_debut)} %** pour la génération "
+    f"{an_debut - age}, **{fr_num(pct_fin)} %** pour la génération {an_fin - age}."
 )
 
 # ---------------------------------------------------------------------------
@@ -147,24 +145,20 @@ apply_layout(
 st.plotly_chart(fig, width='stretch')
 
 note_lecture(
-    f"Chaque point du graphique est une <strong>génération différente</strong>, "
-    f"observée au moment où elle a atteint {age} ans."
+    f"<strong>Axe horizontal</strong> : année où chaque génération atteint {age} ans. "
+    f"{an_debut} correspond à la génération {an_debut - age}, {an_fin} à la "
+    f"génération {an_fin - age}."
+    "<br>"
+    f"<strong>Axe vertical</strong> : part de la génération encore en vie à {age} ans, "
+    "à partir d'une valeur non nulle pour rendre l'écart lisible."
+    "<br>"
+    f"<strong>Zones</strong> : en gris, survivants ; en rouge, décès avant {age} ans."
     "<br><br>"
-    f"L'axe horizontal donne l'année de ce passage. Un point placé en "
-    f"<strong>{an_debut}</strong> concerne les personnes nées en "
-    f"{an_debut - age} ; un point placé en <strong>{an_fin}</strong> concerne "
-    f"celles nées en {an_fin - age}. Ce ne sont donc jamais les mêmes "
-    "personnes d'un point à l'autre."
-    "<br><br>"
-    f"L'axe vertical donne la part de la génération encore en vie à ce "
-    f"moment-là. La zone grise du haut représente les survivants, la zone rouge "
-    f"du bas ceux décédés avant {age} ans."
-    "<br><br>"
-    f"La courbe monte : chez les {SEX_LABELS[sexe].lower()}, "
-    f"<strong>{fr_num(pct_debut)} %</strong> de la génération {an_debut - age} "
-    f"était encore en vie à {age} ans, contre "
-    f"<strong>{fr_num(pct_fin)} %</strong> de la génération {an_fin - age}. "
-    "L'axe vertical ne part pas de zéro, afin de rendre cet écart lisible.",
+    "Un point par génération : les personnes diffèrent d'un point à l'autre."
+    "<br>"
+    f"{SEX_LABELS[sexe]} : <strong>{fr_num(pct_debut)} %</strong> de la génération "
+    f"{an_debut - age} en vie à {age} ans, <strong>{fr_num(pct_fin)} %</strong> de la "
+    f"génération {an_fin - age}.",
     "Survie par génération : estimation à ±5 % (tables de génération INSEE / "
     "Vallin & Meslé)",
 )

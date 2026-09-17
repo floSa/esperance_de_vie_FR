@@ -20,8 +20,8 @@ render_sidebar()
 
 st.title("🎚️ Espérance de vie par âge")
 st.caption(
-    "Combien d'années reste-t-il à vivre à une personne d'un âge donné — "
-    "et comment ce nombre a évolué."
+    "Nombre moyen d'années restant à vivre selon l'âge atteint, et son évolution "
+    "de 1998 à 2024."
 )
 
 # ---------------------------------------------------------------------------
@@ -58,14 +58,14 @@ c5.metric(f"Gain femmes depuis {an_premier}",
 
 if age == 0:
     st.caption(
-        f"En {an_fin}, une fille qui naît vivra **{fr_num(derniere['femmes'])} "
-        f"ans** en moyenne. Un garçon, **{fr_num(derniere['hommes'])} ans**."
+        f"{an_fin} : espérance de vie à la naissance de **{fr_num(derniere['femmes'])} "
+        f"ans** pour les femmes, **{fr_num(derniere['hommes'])} ans** pour les hommes."
     )
 else:
     st.caption(
-        f"En {an_fin}, une femme de {age} ans vivra encore "
-        f"**{fr_num(derniere['femmes'])} ans** en moyenne. "
-        f"Elle mourra donc vers **{fr_num(age + derniere['femmes'], 0)} ans**."
+        f"{an_fin} : femmes de {age} ans, **{fr_num(derniere['femmes'])} années** "
+        f"restant à vivre en moyenne, soit un décès vers "
+        f"**{fr_num(age + derniere['femmes'], 0)} ans**."
     )
 
 # ---------------------------------------------------------------------------
@@ -90,32 +90,29 @@ st.plotly_chart(fig, width='stretch')
 
 exemple = round(float(derniere["femmes"]))
 if age == 0:
-    axe_y = ("le nombre d'années que vivra un bébé né cette année-là, si la "
-             "mortalité ne change plus.")
-    piege = ("Ce n'est pas une prévision. C'est une photo de la mortalité de "
-             "l'année.")
+    axe_y = ("nombre d'années que vivrait un nouveau-né de l'année si la "
+             "mortalité restait constante.")
+    piege = "Indicateur de la mortalité de l'année, et non prévision."
 else:
-    axe_y = (f"le nombre d'années qu'il reste à vivre à une personne de "
-             f"{age} ans cette année-là.")
-    piege = (f"C'est une durée, pas un âge. Un point à {exemple} veut dire "
-             f"« encore {exemple} ans à vivre », soit un décès vers "
+    axe_y = f"nombre moyen d'années restant à vivre à {age} ans, l'année considérée."
+    piege = (f"Valeur exprimée en durée, et non en âge : un point à {exemple} "
+             f"correspond à {exemple} années restant à vivre, soit un décès vers "
              f"{age + exemple} ans."
              "<br>"
-             f"Seules comptent les personnes vivantes à {age} ans. Celles "
-             "mortes avant ne sont pas dans le calcul.")
+             f"Calcul limité aux personnes en vie à {age} ans.")
 
 note_lecture(
-    "<strong>Axe horizontal</strong> : les années, "
-    f"de {an_debut} à {an_fin}. Il ne bouge pas quand tu déplaces le curseur."
+    "<strong>Axe horizontal</strong> : années, "
+    f"de {an_debut} à {an_fin}, identiques pour tous les âges sélectionnés."
     "<br>"
     "<strong>Axe vertical</strong> : " + axe_y
     + "<br>"
-    "<strong>Deux courbes</strong> : les femmes en rose, les hommes en bleu."
+    "<strong>Courbes</strong> : femmes en rose, hommes en bleu."
     "<br><br>"
     + piege
     + (
-        f"<br><br>Eurostat ne publie cet âge qu'à partir de {an_premier} : la "
-        "courbe démarre plus à droite, mais l'axe reste le même."
+        f"<br><br>Âge publié par Eurostat à partir de {an_premier} : début de courbe "
+        "décalé, axe inchangé."
         if an_premier > an_debut else ""
     ),
     repo.millesime("esperance_vie_fr_tous_ages_eurostat"),
