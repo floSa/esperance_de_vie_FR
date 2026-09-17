@@ -41,7 +41,7 @@ c2.metric(f"Hommes, {an_fin}", f"{fr_num(derniere['hommes'])} ans",
 c3.metric("Écart femmes − hommes",
           f"{fr_num(derniere['femmes'] - derniere['hommes'])} ans",
           delta=f"{fr_num(derniere['femmes'] - derniere['hommes'] - (premiere['femmes'] - premiere['hommes']))} ans depuis {an_debut}",
-          delta_color="off")
+          delta_color="off", delta_arrow="off")
 c4.metric("Années couvertes", f"{an_debut} → {an_fin}")
 
 # ---------------------------------------------------------------------------

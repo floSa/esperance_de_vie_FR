@@ -73,14 +73,14 @@ c2.metric(
          "réparties selon la proportion de filles et de garçons à la naissance",
 )
 c3.metric(f"Encore en vie à {age_donnees} ans", f"{fr_num(vivants, 0)}",
-          delta=f"{fr_num(pct_vivants)} %")
+          delta=f"{fr_num(pct_vivants)} %", delta_color="off", delta_arrow="off")
 c4.metric(f"Décédés avant {age_donnees} ans", f"{fr_num(decedes, 0)}",
-          delta=f"-{fr_num(100 - pct_vivants)} %", delta_color="inverse")
+          delta=f"{fr_num(100 - pct_vivants)} %", delta_color="off", delta_arrow="off")
 c5.metric(
     "Décès moyen attendu vers",
     f"{fr_num(age_actuel + residuelle, 0)} ans",
     delta=f"+{fr_num(residuelle)} ans à vivre",
-    delta_color="off",
+    delta_color="off", delta_arrow="off",
     help="Pour les survivants uniquement, selon la table du moment 2025",
 )
 
