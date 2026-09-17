@@ -114,7 +114,7 @@ graphiques illisibles.
 | **Distribution & variance** | À quel âge meurt-on, et cet âge s'est-il resserré ? | Eurostat + estimations | 1900–2024 |
 | **Explorateur de cohorte** | Parmi les personnes nées une année donnée, combien sont encore en vie ? | Estimations ±5 % | générations 1930–1990 |
 | **Survie à un âge donné** | À âge constant, la survie progresse-t-elle d'une génération à l'autre ? | Estimations ±5 % | générations 1930–1990 |
-| **Personnalités** | Les personnalités meurent-elles plus âgées que l'ensemble des Français ? | Wikidata + Eurostat | 1990–2024 |
+| **Personnalités** | Les personnalités meurent-elles plus âgées que l'ensemble des Français ? Et, une à une, avant ou après l'âge qu'on pouvait leur prédire ? | Wikidata + Eurostat + INSEE | 1990–2024 |
 
 Chaque graphique porte une note **« Comment lire ce graphique »**. Les
 graphiques sont générés à la volée par Plotly (thème clair/sombre suivant
@@ -135,6 +135,8 @@ Streamlit) ; chaque page propose un export CSV.
 | Point de comparaison des personnalités | Âge au décès de tous les Français morts la même période, pas l'espérance de vie | Comparer des décès à des décès ; l'espérance de vie décrit une génération fictive |
 | Âge minimal, page Personnalités | Décès à 25 ans ou plus, des deux côtés | On devient rarement célèbre enfant : garder les décès d'enfants rajeunirait artificiellement la population |
 | Sexe, page Personnalités | Toujours séparé | 83 % des personnalités sont des hommes, qui meurent plus jeunes |
+| Âge prédit d'une personnalité | 60 ans + espérance de vie à 60 ans l'année de ses 60 ans | À la naissance, l'INSEE ne remonte qu'à 1946 et la mesure inclut les décès d'enfants |
+| Référence de l'âge prédit | Même calcul sur tous les décès enregistrés | La prédiction sous-estime la survie, puisque la mortalité continue de baisser : l'ensemble des Français la dépasse aussi le plus souvent |
 
 ## Résultats clés
 
@@ -156,6 +158,9 @@ Streamlit) ; chaque page propose un export CSV.
   contre 73,6 ans), un écart stable sur toute la période. Chez les femmes, **pas
   d'écart réel** (81,9 contre 81,4 ans). Ce n'est pas une preuve que la
   célébrité protège : vivre longtemps aide à devenir connu.
+- **Avant ou après l'âge prédit** : 67 % des hommes célèbres meurent après
+  l'âge qu'on pouvait leur prédire à 60 ans, contre 53 % de l'ensemble des
+  Français. Chez les femmes, 63 % contre 61 %.
 
 ## Structure
 

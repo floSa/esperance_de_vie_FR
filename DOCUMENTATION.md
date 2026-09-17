@@ -23,7 +23,7 @@ sept pages :
 | Distribution & variance | Les âges au décès se sont-ils resserrés autour d'un âge élevé ? | Quartiles Q1–Q3, IQR, écart-type |
 | Explorateur de cohorte | Parmi les personnes nées une année donnée, combien sont encore en vie ? | Courbe de survie, effectifs |
 | Survie à un âge donné | À âge constant, la survie s'améliore-t-elle d'une génération à l'autre ? | % vivants à âge fixe |
-| Personnalités | Les personnalités meurent-elles plus âgées que l'ensemble des Français ? | Âge moyen au décès, par sexe et période de 5 ans |
+| Personnalités | Les personnalités meurent-elles plus âgées que l'ensemble des Français ? | Âge moyen au décès par période ; écart de chaque personnalité à son âge prédit |
 
 **Vocabulaire démographique manipulé** :
 
@@ -231,7 +231,33 @@ Seules les années couvertes par les deux sources entrent dans le calcul
 > devient rarement célèbre enfant. Garder les décès d'enfants dans la population
 > seule abaisserait artificiellement son âge moyen au décès.
 
-### 3.7 Authentification HMD
+### 3.7 Âge prédit d'une personnalité — `ecarts_personnalites`
+
+Pour une personne de sexe $s$, née l'année $n$ et morte à l'âge $a \geq 60$ :
+
+$$\hat{a} = 60 + e_{60}(n + 60,\; s), \qquad \text{écart} = a - \hat{a}$$
+
+où $e_{60}(t, s)$ est l'espérance de vie à 60 ans publiée par l'INSEE pour
+l'année $t$. Un écart positif signifie un décès après l'âge prédit.
+
+Le même calcul est appliqué à tous les décès enregistrés (`ecarts_population`),
+en déduisant l'année des 60 ans de l'année et de l'âge au décès, et en pondérant
+par le nombre de décès. Le groupe « 100 ans et plus » est gardé à 100 ans.
+
+> **Décision** — *Prédire à 60 ans* **plutôt qu'**à la naissance, **parce
+> que** l'INSEE ne publie l'espérance de vie qu'à partir de 1946 (seules 14 % des
+> personnalités seraient comparables), et que l'espérance à la naissance compte
+> les décès d'enfants, auxquels toute personnalité a survécu. **Limite** : les
+> personnalités mortes avant 60 ans n'ont pas d'âge prédit (2 289 hommes et
+> femmes sur 1990–2024) ; la page les dénombre.
+
+> **Décision** — *Afficher la même mesure pour l'ensemble des Français*,
+> **parce que** $e_{60}$ vient d'une table du moment : la mortalité ayant
+> continué de baisser après l'année des 60 ans, la plupart des gens dépassent
+> leur âge prédit. Sans cette référence, « 67 % après la prédiction » ferait
+> croire à un effet bien plus fort qu'il n'est.
+
+### 3.8 Authentification HMD
 
 HMD n'est **pas** utilisé par défaut, Eurostat fournissant les mêmes quantités
 en accès libre depuis 2014. La fonction `hmd_session()` reste disponible pour
@@ -267,6 +293,8 @@ table de mortalité.
 | Personnalités : âge minimal | 25 ans, des deux côtés | Neutraliser la mortalité infantile, absente chez les personnalités |
 | Personnalités : sexe | Toujours séparé | 83 % des personnalités sont des hommes, qui meurent plus jeunes |
 | Personnalités : définition | Au moins un article Wikipédia, toutes langues | Sans ce filtre, un tiers des fiches Wikidata ne sont pas des personnalités publiques |
+| Personnalités : âge prédit | 60 ans + espérance de vie à 60 ans l'année des 60 ans (§ 3.7) | Couvre 92 % des personnalités, sans biais de mortalité infantile |
+| Personnalités : référence | Même mesure sur tous les décès | La prédiction est dépassée par la majorité de la population elle-même |
 | Découpage des pages | Une question, une source, une période par page | Une figure mêlant deux périmètres est illisible : c'est ce qui a motivé le passage de quatre à six, puis sept pages |
 | Axe des années, page « par âge » | Fixé à 1998–2024 quel que soit l'âge | Un axe qui bouge avec le sélecteur rend deux sélections incomparables |
 | Survie au-delà du dernier âge documenté | Affichage borné, écart signalé | Mieux vaut afficher moins que d'inventer une valeur |
@@ -315,6 +343,11 @@ Série longue tous sexes confondus (OWID) : **40,1 ans en 1816**, 45,1 en 1900,
 - **Femmes** : pas d'écart réel ; il devient même légèrement négatif sur
   2015–2024 (−0,2 et −0,3 an).
 
+| Décès après l'âge prédit à 60 ans, 1990–2024 | Personnalités | Ensemble | Écart médian (personnalités / ensemble) |
+|---|---|---|---|
+| Hommes | **67 %** | 53 % | +5,4 ans / +1,0 an |
+| Femmes | **63 %** | 61 % | +4,0 ans / +3,2 ans |
+
 ---
 
 ## 6. Visualisations
@@ -332,7 +365,7 @@ graphique »** qui explique les axes, le sens d'une variation et le piège
 | Distribution & variance | Bande Q1–Q3 + médiane + e₀, avec repère visuel de la frontière estimé / mesuré ; aire d'évolution de l'IQR |
 | Explorateur de cohorte | Courbe de survie empilée (vivants / décédés cumulés) avec repère de l'âge courant |
 | Survie à un âge donné | Aire du % encore en vie à âge fixe selon l'année d'observation, flèche de progression |
-| Personnalités | Barres groupées par période de 5 ans : âge moyen au décès de l'ensemble (gris) et des personnalités (couleur du sexe) |
+| Personnalités | Barres groupées par période de 5 ans : âge moyen au décès de l'ensemble (gris) et des personnalités (couleur du sexe) ; graphique en haltères des 30 personnalités les plus connues de la période (âge prédit → âge réel, vert après, rouge avant) ; histogramme des écarts à l'âge prédit, personnalités en barres, ensemble en ligne |
 
 Le thème Plotly (`plotly_white` / `plotly_dark`) suit le thème Streamlit courant
 (`apply_layout`). Chaque page propose un export **CSV** (`download_csv`).
@@ -399,6 +432,10 @@ Wikidata ──► projet deces_personnalites_FR (collecte longue, import du CSV
   Wikidata, doubles nationaux inclus ; « personnalité » au sens d'au moins un
   article Wikipédia. La complétude dépend des contributeurs, et les décès les
   plus récents sont sous-représentés.
+- **Âge prédit issu d'une table du moment** : il sous-estime la survie réelle.
+  C'est pourquoi la page le compare toujours au même calcul fait sur l'ensemble
+  des Français, et jamais à zéro. Les personnalités mortes avant 60 ans en sont
+  exclues.
 - **Population, rupture de périmètre en 1998** : France métropolitaine avant,
   France entière ensuite. Les DOM pèsent environ 2 % des décès.
 - **Millésime figé** : les données ne sont à jour que du dernier
@@ -443,7 +480,9 @@ Les tests de
 [tests/test_comparaison_personnalites.py](tests/test_comparaison_personnalites.py)
 verrouillent la méthode de la page Personnalités sur des données synthétiques :
 même seuil d'âge des deux côtés, moyenne de la population pondérée par les
-décès, période limitée aux années communes, sexes séparés.
+décès, période limitée aux années communes, sexes séparés, âge prédit pris
+l'année des 60 ans et sur la seule source INSEE, personnalités mortes avant
+60 ans écartées et dénombrées.
 
 La CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) exécute les trois
 commandes ci-dessus à chaque push et chaque pull request.
