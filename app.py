@@ -30,7 +30,7 @@ c3.metric("Écart femmes − hommes",
           f"{fr_num(derniere['femmes'] - derniere['hommes'])} ans")
 
 st.markdown("---")
-st.subheader("Les six vues")
+st.subheader("Les sept vues")
 st.caption("Une question par page, une source, une période.")
 
 col_a, col_b = st.columns(2)
@@ -65,6 +65,11 @@ with col_b:
         "pages/06_survie_age_donne.py",
         label="**Survie à un âge donné** — comparaison entre générations",
         icon="🔄",
+    )
+    st.page_link(
+        "pages/07_personnalites.py",
+        label="**Personnalités** — vivent-elles plus longtemps ?",
+        icon="🎭",
     )
 
 st.markdown("")

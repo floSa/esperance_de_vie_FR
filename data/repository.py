@@ -204,3 +204,78 @@ def moyenne_ue() -> float | None:
 
 def annee_europe() -> int:
     return int(europe()["annee"].iloc[0])
+
+
+# ---------------------------------------------------------------------------
+# Personnalités et population
+# ---------------------------------------------------------------------------
+
+# On devient rarement célèbre avant l'âge adulte. Compter les décès d'enfants
+# dans la population, et pas chez les personnalités, abaisserait artificiellement
+# l'âge moyen au décès de la population.
+AGE_ADULTE = 25
+DUREE_PERIODE = 5
+
+
+@lru_cache(maxsize=1)
+def deces_population() -> pd.DataFrame:
+    """Décès enregistrés en France par année, sexe et âge (Eurostat)."""
+    return _read("deces_par_age_eurostat")
+
+
+@lru_cache(maxsize=1)
+def personnalites() -> pd.DataFrame:
+    """Personnalités françaises décédées, avec âge exact au décès (Wikidata)."""
+    return _read("deces_personnalites_wikidata")
+
+
+def _periode(annee: pd.Series, debut: int) -> pd.Series:
+    return debut + (annee - debut) // DUREE_PERIODE * DUREE_PERIODE
+
+
+def comparaison_age_deces(sexe: str, age_min: int = AGE_ADULTE) -> pd.DataFrame:
+    """Âge moyen au décès par période de 5 ans : personnalités contre population.
+
+    Des deux côtés, la même population est comparée : les personnes mortes
+    pendant la période, à `age_min` ans ou plus, du même sexe. Seules les années
+    couvertes par les deux sources sont retenues.
+    """
+    pop = deces_population()
+    pers = personnalites()
+    debut = max(int(pop["year"].min()), int(pers["year"].min()))
+    fin = min(int(pop["year"].max()), int(pers["year"].max()))
+
+    pop = pop[(pop["sexe"] == sexe) & (pop["age"] >= age_min)
+              & pop["year"].between(debut, fin)].copy()
+    pers = pers[(pers["sexe"] == sexe) & (pers["age"] >= age_min)
+                & pers["year"].between(debut, fin)].copy()
+    pop["periode"] = _periode(pop["year"], debut)
+    pers["periode"] = _periode(pers["year"], debut)
+
+    pop["age_x_deces"] = pop["age"] * pop["deces"]
+    cote_pop = pop.groupby("periode").agg(age_x=("age_x_deces", "sum"),
+                                          deces=("deces", "sum"))
+    cote_pop["age_moyen_population"] = cote_pop["age_x"] / cote_pop["deces"]
+    cote_pers = pers.groupby("periode").agg(age_moyen_personnalites=("age", "mean"),
+                                            nb_personnalites=("age", "size"))
+
+    out = cote_pop[["age_moyen_population"]].join(cote_pers, how="inner").reset_index()
+    out["fin_periode"] = (out["periode"] + DUREE_PERIODE - 1).clip(upper=fin)
+    out["libelle"] = out["periode"].astype(str) + "–" + out["fin_periode"].astype(str)
+    out["ecart"] = out["age_moyen_personnalites"] - out["age_moyen_population"]
+    return out
+
+
+def bilan_age_deces(sexe: str, age_min: int = AGE_ADULTE) -> dict:
+    """Moyennes sur toute la période commune aux deux sources."""
+    pop, pers = deces_population(), personnalites()
+    debut = max(int(pop["year"].min()), int(pers["year"].min()))
+    fin = min(int(pop["year"].max()), int(pers["year"].max()))
+    pop = pop[(pop["sexe"] == sexe) & (pop["age"] >= age_min) & pop["year"].between(debut, fin)]
+    pers = pers[(pers["sexe"] == sexe) & (pers["age"] >= age_min)
+                & pers["year"].between(debut, fin)]
+    moy_pop = float((pop["age"] * pop["deces"]).sum() / pop["deces"].sum())
+    moy_pers = float(pers["age"].mean())
+    return {"debut": debut, "fin": fin, "population": moy_pop,
+            "personnalites": moy_pers, "ecart": moy_pers - moy_pop,
+            "nb_personnalites": len(pers)}
